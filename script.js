@@ -122,21 +122,39 @@ contactForm.addEventListener('submit', async (e) => {
     submitBtn.classList.add('loading');
     submitBtn.disabled = true;
 
-    // Simulate form submission (replace with actual API call)
+    // Submit to Web3Forms
     try {
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        const response = await fetch('https://api.web3forms.com/submit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                access_key: '3801a99d-c308-43e3-a2a7-cd7161095bd4',
+                name: nameInput.value,
+                email: emailInput.value,
+                message: messageInput.value,
+                subject: 'New contact from benfarren.co.uk'
+            })
+        });
 
-        // Success - show success message
-        contactForm.innerHTML = `
-            <div class="success-message">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
-                <h3>Message Sent!</h3>
-                <p>Thank you for reaching out. I'll get back to you soon.</p>
-            </div>
-        `;
+        const result = await response.json();
+
+        if (result.success) {
+            // Success - show success message
+            contactForm.innerHTML = `
+                <div class="success-message">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    <h3>Message Sent!</h3>
+                    <p>Thank you for reaching out. I'll get back to you soon.</p>
+                </div>
+            `;
+        } else {
+            throw new Error('Form submission failed');
+        }
     } catch (error) {
         // Error handling
         submitBtn.classList.remove('loading');

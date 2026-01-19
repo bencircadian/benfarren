@@ -1,222 +1,336 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="light" lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ben Farren | Portfolio</title>
-    <link rel="stylesheet" href="styles.css">
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Ben Farren | Director of Mathematics</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Inter:wght@100..900&family=JetBrains+Mono:wght@300;500&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "academic-blue": "#0f172a",
+                        "academic-green": "#166534",
+                        "paper-bg": "#f8fafc",
+                        "accent-teal": "#0d9488",
+                        "data-line": "#334155",
+                    },
+                    fontFamily: {
+                        "mono": ["JetBrains Mono", "monospace"],
+                        "sans": ["Inter", "sans-serif"],
+                        "serif": ["Crimson Pro", "serif"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer base {
+            body {
+                @apply bg-paper-bg text-slate-800 font-sans selection:bg-accent-teal selection:text-white;
+            }
+        }
+        .graph-paper {
+            background-image:
+                linear-gradient(to right, #e2e8f0 1px, transparent 1px),
+                linear-gradient(to bottom, #e2e8f0 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        .graph-paper-fine {
+            background-image:
+                linear-gradient(to right, #f1f5f9 1px, transparent 1px),
+                linear-gradient(to bottom, #f1f5f9 1px, transparent 1px);
+            background-size: 6px 6px;
+        }
+        .module-card {
+            @apply border-t-4 border-academic-blue bg-white shadow-sm transition-all duration-300;
+        }
+    </style>
 </head>
-<body>
-    <!-- Geometric background shapes -->
-    <div class="bg-shapes">
-        <div class="shape shape-1"></div>
-        <div class="shape shape-2"></div>
-        <div class="shape shape-3"></div>
-    </div>
+<body class="relative min-h-screen">
+    <!-- Background grid pattern -->
+    <div class="fixed inset-0 graph-paper opacity-60 pointer-events-none"></div>
+    <div class="fixed inset-0 graph-paper-fine opacity-40 pointer-events-none"></div>
 
-    <!-- Hero Section -->
-    <section class="hero" id="hero">
-        <div class="hero-content">
-            <h1 class="hero-title">
-                <span class="title-line">Hi, I'm</span>
-                <span class="title-name gradient-text">Ben Farren</span>
-            </h1>
-            <p class="hero-tagline">Building digital experiences that make a difference</p>
-            <div class="hero-cta">
-                <a href="#projects" class="btn btn-primary">View My Work</a>
-                <a href="#contact" class="btn btn-secondary">Get In Touch</a>
+    <!-- Navigation -->
+    <nav class="sticky top-0 h-20 border-b border-slate-200 bg-white/90 backdrop-blur-md flex items-center justify-between px-6 lg:px-16 z-50">
+        <div class="flex items-center gap-4">
+            <span class="text-3xl font-serif font-bold text-academic-blue">BF</span>
+            <div class="h-8 w-px bg-slate-200"></div>
+            <div class="flex flex-col">
+                <span class="font-serif italic text-sm tracking-tight text-slate-900">Ben Farren</span>
+                <span class="font-mono text-[10px] uppercase tracking-tighter text-slate-500">Director of Mathematics</span>
             </div>
         </div>
-        <div class="scroll-indicator">
-            <span>Scroll</span>
-            <div class="scroll-line"></div>
+        <div class="hidden md:flex items-center gap-10 font-sans text-xs font-bold uppercase tracking-widest text-slate-600">
+            <a class="hover:text-academic-green transition-colors" href="#about">About</a>
+            <a class="hover:text-academic-green transition-colors" href="#projects">Projects</a>
+            <a class="hover:text-academic-green transition-colors" href="#approach">Approach</a>
+            <a class="bg-academic-blue text-white px-5 py-2 hover:bg-academic-green transition-colors" href="#contact">Contact</a>
         </div>
-    </section>
+    </nav>
 
-    <!-- Projects Section -->
-    <section class="projects" id="projects">
-        <div class="container">
-            <h2 class="section-title">
-                <span class="gradient-text">Featured Projects</span>
-            </h2>
-            <div class="projects-grid">
-                <!-- Project Card 1 -->
-                <article class="project-card" data-animate>
-                    <div class="project-image">
-                        <div class="project-placeholder">
-                            <span>Project 1</span>
+    <main class="relative z-10">
+        <!-- Hero Section -->
+        <section class="max-w-7xl mx-auto px-6 lg:px-16 py-24 md:py-36" id="about">
+            <div class="grid lg:grid-cols-12 gap-12 items-center">
+                <div class="lg:col-span-7">
+                    <h2 class="text-xs font-mono font-bold text-academic-green mb-4 tracking-[0.2em] uppercase">South London Academy</h2>
+                    <h1 class="text-6xl md:text-8xl font-serif text-slate-900 leading-tight mb-8">
+                        Full time <span class="italic text-academic-green">educator</span>,<br/>
+                        part time <span class="italic text-academic-blue">tinkerer</span>
+                    </h1>
+                    <p class="text-xl md:text-2xl text-slate-600 font-serif leading-relaxed max-w-2xl">
+                        Director of Mathematics with a passion for building tools that make teaching more effective and learning more memorable. Bridging pedagogy and technology through thoughtful software.
+                    </p>
+                    <div class="mt-16 flex flex-wrap gap-12 border-t border-slate-200 pt-10">
+                        <div>
+                            <div class="text-[10px] font-mono text-slate-400 uppercase tracking-widest mb-1">Years Teaching</div>
+                            <div class="text-4xl font-serif text-slate-900">9</div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] font-mono text-slate-400 uppercase tracking-widest mb-1">Students Reached</div>
+                            <div class="text-4xl font-serif text-academic-green">1000s</div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] font-mono text-slate-400 uppercase tracking-widest mb-1">Student Progress</div>
+                            <div class="text-4xl font-serif text-slate-900">Positive</div>
                         </div>
                     </div>
-                    <div class="project-content">
-                        <h3 class="project-title">E-Commerce Platform</h3>
-                        <p class="project-description">
-                            A full-stack e-commerce solution with real-time inventory management,
-                            secure payments, and an intuitive admin dashboard.
-                        </p>
-                        <div class="project-tags">
-                            <span class="tag">React</span>
-                            <span class="tag">Node.js</span>
-                            <span class="tag">MongoDB</span>
-                            <span class="tag">Stripe</span>
-                        </div>
-                        <div class="project-links">
-                            <a href="#" class="project-link">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                    <polyline points="15 3 21 3 21 9"></polyline>
-                                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                                </svg>
-                                Live Demo
-                            </a>
-                            <a href="#" class="project-link">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
-                                </svg>
-                                GitHub
-                            </a>
-                        </div>
-                    </div>
-                </article>
-
-                <!-- Project Card 2 -->
-                <article class="project-card" data-animate>
-                    <div class="project-image">
-                        <div class="project-placeholder">
-                            <span>Project 2</span>
-                        </div>
-                    </div>
-                    <div class="project-content">
-                        <h3 class="project-title">Task Management App</h3>
-                        <p class="project-description">
-                            A collaborative task management tool with real-time updates,
-                            drag-and-drop functionality, and team collaboration features.
-                        </p>
-                        <div class="project-tags">
-                            <span class="tag">Vue.js</span>
-                            <span class="tag">Firebase</span>
-                            <span class="tag">Tailwind</span>
-                        </div>
-                        <div class="project-links">
-                            <a href="#" class="project-link">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                    <polyline points="15 3 21 3 21 9"></polyline>
-                                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                                </svg>
-                                Live Demo
-                            </a>
-                            <a href="#" class="project-link">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
-                                </svg>
-                                GitHub
-                            </a>
-                        </div>
-                    </div>
-                </article>
-
-                <!-- Project Card 3 -->
-                <article class="project-card" data-animate>
-                    <div class="project-image">
-                        <div class="project-placeholder">
-                            <span>Project 3</span>
-                        </div>
-                    </div>
-                    <div class="project-content">
-                        <h3 class="project-title">Weather Dashboard</h3>
-                        <p class="project-description">
-                            A beautiful weather application with location-based forecasts,
-                            interactive maps, and detailed meteorological data visualization.
-                        </p>
-                        <div class="project-tags">
-                            <span class="tag">JavaScript</span>
-                            <span class="tag">API</span>
-                            <span class="tag">Chart.js</span>
-                        </div>
-                        <div class="project-links">
-                            <a href="#" class="project-link">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                    <polyline points="15 3 21 3 21 9"></polyline>
-                                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                                </svg>
-                                Live Demo
-                            </a>
-                            <a href="#" class="project-link">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
-                                </svg>
-                                GitHub
-                            </a>
-                        </div>
-                    </div>
-                </article>
-            </div>
-        </div>
-    </section>
-
-    <!-- Contact Section -->
-    <section class="contact" id="contact">
-        <div class="container">
-            <h2 class="section-title">
-                <span class="gradient-text">Get In Touch</span>
-            </h2>
-            <p class="contact-intro">
-                Have a project in mind or just want to say hello? I'd love to hear from you.
-            </p>
-            <form class="contact-form" id="contactForm">
-                <div class="form-group">
-                    <label for="name">Name</label>
-                    <input type="text" id="name" name="name" required placeholder="Your name">
-                    <span class="error-message" id="nameError"></span>
                 </div>
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" required placeholder="your@email.com">
-                    <span class="error-message" id="emailError"></span>
-                </div>
-                <div class="form-group">
-                    <label for="message">Message</label>
-                    <textarea id="message" name="message" required rows="5" placeholder="Your message..."></textarea>
-                    <span class="error-message" id="messageError"></span>
-                </div>
-                <button type="submit" class="btn btn-primary btn-submit">
-                    <span class="btn-text">Send Message</span>
-                    <span class="btn-loading">
-                        <svg class="spinner" viewBox="0 0 24 24">
-                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="31.4 31.4"></circle>
+                <div class="lg:col-span-5 relative">
+                    <div class="aspect-square bg-white border border-slate-200 shadow-2xl p-8 flex items-center justify-center">
+                        <svg class="w-full h-full overflow-visible" viewBox="0 0 200 200">
+                            <line stroke="#e2e8f0" stroke-width="1" x1="0" x2="200" y1="180" y2="180"></line>
+                            <line stroke="#e2e8f0" stroke-width="1" x1="20" x2="20" y1="0" y2="200"></line>
+                            <path d="M20,160 Q100,80 180,40 L180,80 Q100,120 20,180 Z" fill="#166534" opacity="0.1"></path>
+                            <path d="M20,170 Q100,100 180,60" fill="none" stroke="#166534" stroke-width="2"></path>
+                            <circle cx="40" cy="155" fill="#0f172a" r="3"></circle>
+                            <circle cx="70" cy="130" fill="#0f172a" r="3"></circle>
+                            <circle cx="110" cy="95" fill="#166534" r="3"></circle>
+                            <circle cx="150" cy="70" fill="#166534" r="3"></circle>
+                            <circle cx="170" cy="55" fill="#166534" r="3"></circle>
+                            <text fill="#94a3b8" font-family="JetBrains Mono" font-size="5" x="60" y="195">TIME</text>
+                            <text fill="#94a3b8" font-family="JetBrains Mono" font-size="5" transform="rotate(-90 15 100)" x="15" y="100">UNDERSTANDING</text>
                         </svg>
-                        Sending...
-                    </span>
-                </button>
-            </form>
-            <div class="social-links">
-                <a href="#" class="social-link" aria-label="GitHub">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                    </svg>
-                </a>
-                <a href="#" class="social-link" aria-label="LinkedIn">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
-                    </svg>
-                </a>
-                <a href="#" class="social-link" aria-label="Twitter">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                    </svg>
-                </a>
+                        <div class="absolute -bottom-4 -right-4 bg-academic-blue text-white px-6 py-4 shadow-xl">
+                            <span class="font-mono text-[9px] uppercase block mb-1">Philosophy</span>
+                            <span class="text-xl font-serif">Build to teach better</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-    </section>
+        </section>
+
+        <!-- Projects Section -->
+        <section class="max-w-7xl mx-auto px-6 lg:px-16 pb-32 space-y-16" id="projects">
+            <div class="text-center mb-16">
+                <h2 class="text-xs font-mono font-bold text-academic-green mb-4 tracking-[0.2em] uppercase">Side Projects</h2>
+                <h3 class="text-5xl font-serif text-slate-900">Things I've Built</h3>
+            </div>
+
+            <!-- Project 1: Engram.study -->
+            <div class="module-card p-0 overflow-hidden">
+                <div class="grid lg:grid-cols-2 divide-x divide-slate-100">
+                    <div class="p-8 lg:p-16">
+                        <span class="text-[10px] font-mono text-academic-green uppercase tracking-widest font-bold">Project 01 // engram.study</span>
+                        <h3 class="text-4xl font-serif text-slate-900 mt-4 mb-10">Spaced Repetition for Students</h3>
+                        <div class="space-y-10">
+                            <div>
+                                <h4 class="text-xs font-bold uppercase text-slate-400 mb-3 tracking-widest">The Problem</h4>
+                                <p class="text-slate-600 font-serif text-lg leading-relaxed">
+                                    Students forget what they've learned. Traditional homework doesn't account for the forgetting curve, leading to constant re-teaching and lost progress over holidays.
+                                </p>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-bold uppercase text-slate-400 mb-3 tracking-widest">The Solution</h4>
+                                <p class="text-slate-600 font-serif text-lg leading-relaxed">
+                                    A spaced repetition platform with AI-generated high-quality questions. Teachers can create custom DNAs (Do Now Activities) with deep customization to match their curriculum and teaching style.
+                                </p>
+                            </div>
+                            <div class="bg-slate-50 p-6 border-l-4 border-academic-green">
+                                <h4 class="text-xs font-bold uppercase text-academic-green mb-1 tracking-widest">Key Features</h4>
+                                <ul class="text-slate-600 font-serif text-lg space-y-2 mt-3">
+                                    <li>• Adaptive spaced repetition algorithm</li>
+                                    <li>• AI-powered question generation</li>
+                                    <li>• Custom DNA/Starter Activity builder</li>
+                                    <li>• Teacher dashboard with analytics</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <a href="https://engram.study" target="_blank" class="inline-flex items-center gap-2 mt-8 text-academic-green font-mono text-sm uppercase tracking-widest hover:text-academic-blue transition-colors">
+                            Visit engram.study
+                            <span class="material-symbols-outlined text-sm">arrow_outward</span>
+                        </a>
+                    </div>
+                    <div class="bg-slate-50 flex items-center justify-center p-12 relative overflow-hidden">
+                        <div class="w-full max-w-md grid grid-cols-7 gap-1">
+                            <!-- Retention heatmap visualization -->
+                            <div class="aspect-square bg-academic-green opacity-10"></div>
+                            <div class="aspect-square bg-academic-green opacity-20"></div>
+                            <div class="aspect-square bg-academic-green opacity-40"></div>
+                            <div class="aspect-square bg-academic-green opacity-10"></div>
+                            <div class="aspect-square bg-academic-green opacity-5"></div>
+                            <div class="aspect-square bg-academic-green opacity-30"></div>
+                            <div class="aspect-square bg-academic-green opacity-60"></div>
+                            <div class="aspect-square bg-academic-green opacity-40"></div>
+                            <div class="aspect-square bg-academic-green opacity-80"></div>
+                            <div class="aspect-square bg-academic-green opacity-100"></div>
+                            <div class="aspect-square bg-academic-green opacity-90"></div>
+                            <div class="aspect-square bg-academic-green opacity-40"></div>
+                            <div class="aspect-square bg-academic-green opacity-20"></div>
+                            <div class="aspect-square bg-academic-green opacity-10"></div>
+                            <div class="aspect-square bg-academic-green opacity-10"></div>
+                            <div class="aspect-square bg-academic-green opacity-30"></div>
+                            <div class="aspect-square bg-academic-green opacity-50"></div>
+                            <div class="aspect-square bg-academic-green opacity-60"></div>
+                            <div class="aspect-square bg-academic-green opacity-20"></div>
+                            <div class="aspect-square bg-academic-green opacity-5"></div>
+                            <div class="aspect-square bg-academic-green opacity-10"></div>
+                            <div class="aspect-square bg-academic-green opacity-30"></div>
+                            <div class="aspect-square bg-academic-green opacity-50"></div>
+                            <div class="aspect-square bg-academic-green opacity-70"></div>
+                            <div class="aspect-square bg-academic-green opacity-80"></div>
+                            <div class="aspect-square bg-academic-green opacity-40"></div>
+                            <div class="aspect-square bg-academic-green opacity-15"></div>
+                            <div class="aspect-square bg-academic-green opacity-20"></div>
+                        </div>
+                        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4">
+                            <span class="text-[9px] font-mono text-slate-400">RETENTION_INTENSITY</span>
+                            <div class="h-2 w-24 bg-gradient-to-r from-academic-green/5 to-academic-green"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project 2: Placeholder -->
+            <div class="module-card p-0 overflow-hidden">
+                <div class="grid lg:grid-cols-2 divide-x divide-slate-100">
+                    <div class="bg-slate-50 flex items-center justify-center p-12 order-2 lg:order-1">
+                        <div class="w-full max-w-md aspect-video border border-slate-200 bg-white shadow-inner p-4 relative flex items-center justify-center">
+                            <span class="text-slate-300 font-mono text-sm">PROJECT_VISUAL_PLACEHOLDER</span>
+                        </div>
+                    </div>
+                    <div class="p-8 lg:p-16 order-1 lg:order-2">
+                        <span class="text-[10px] font-mono text-academic-green uppercase tracking-widest font-bold">Project 02 // Coming Soon</span>
+                        <h3 class="text-4xl font-serif text-slate-900 mt-4 mb-10">Placeholder Project</h3>
+                        <div class="space-y-10">
+                            <div>
+                                <h4 class="text-xs font-bold uppercase text-slate-400 mb-3 tracking-widest">The Problem</h4>
+                                <p class="text-slate-600 font-serif text-lg leading-relaxed">
+                                    Description of the problem this project solves.
+                                </p>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-bold uppercase text-slate-400 mb-3 tracking-widest">The Solution</h4>
+                                <p class="text-slate-600 font-serif text-lg leading-relaxed">
+                                    Description of the approach and solution.
+                                </p>
+                            </div>
+                            <div class="bg-slate-50 p-6 border-l-4 border-academic-blue">
+                                <h4 class="text-xs font-bold uppercase text-academic-blue mb-1 tracking-widest">Key Features</h4>
+                                <ul class="text-slate-600 font-serif text-lg space-y-2 mt-3">
+                                    <li>• Feature placeholder</li>
+                                    <li>• Feature placeholder</li>
+                                    <li>• Feature placeholder</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Approach Section -->
+        <section class="bg-academic-blue text-white py-32" id="approach">
+            <div class="max-w-7xl mx-auto px-6 lg:px-16">
+                <div class="grid lg:grid-cols-2 gap-24">
+                    <div>
+                        <h2 class="text-xs font-mono font-bold text-accent-teal mb-4 tracking-[0.2em] uppercase">How I Work</h2>
+                        <h3 class="text-5xl font-serif leading-tight mb-8">Where teaching meets <span class="italic">technology</span>.</h3>
+                        <p class="text-slate-400 font-serif text-xl leading-relaxed mb-12">
+                            After 9 years in the classroom, I've learned that the best educational tools come from understanding real problems teachers face. I build software that I wish existed when I started teaching.
+                        </p>
+                        <div class="grid grid-cols-2 gap-8 border-t border-slate-800 pt-12">
+                            <div>
+                                <span class="text-accent-teal text-xs font-mono block mb-2 font-bold uppercase">Education</span>
+                                <p class="text-slate-300 text-sm font-serif italic">Mathematics curriculum, pedagogy, assessment design, data-driven intervention.</p>
+                            </div>
+                            <div>
+                                <span class="text-accent-teal text-xs font-mono block mb-2 font-bold uppercase">Technology</span>
+                                <p class="text-slate-300 text-sm font-serif italic">Vibe coding with Claude Code. Building tools that solve real classroom problems.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-6">
+                        <div class="bg-slate-900/50 p-8 border border-slate-800">
+                            <span class="text-3xl font-serif block mb-2">01. Identify the friction</span>
+                            <p class="text-slate-400 text-sm font-sans leading-relaxed">Start with real problems. What wastes teacher time? What causes students to struggle unnecessarily?</p>
+                        </div>
+                        <div class="bg-slate-900/50 p-8 border border-slate-800">
+                            <span class="text-3xl font-serif block mb-2">02. Build fast, test in class</span>
+                            <p class="text-slate-400 text-sm font-sans leading-relaxed">Use AI tools like Claude Code to prototype quickly. Get real feedback from students and colleagues.</p>
+                        </div>
+                        <div class="bg-slate-900/50 p-8 border border-slate-800">
+                            <span class="text-3xl font-serif block mb-2">03. Iterate and refine</span>
+                            <p class="text-slate-400 text-sm font-sans leading-relaxed">Good educational software evolves. Listen to users, measure impact, and keep improving.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section class="py-32 bg-white relative overflow-hidden" id="contact">
+            <div class="absolute right-0 bottom-0 text-[400px] font-serif font-black text-slate-50/50 leading-none select-none -z-10">+</div>
+            <div class="max-w-4xl mx-auto px-6 text-center">
+                <h2 class="text-xs font-mono font-bold text-academic-green mb-6 tracking-[0.2em] uppercase">Get In Touch</h2>
+                <h3 class="text-5xl md:text-7xl font-serif text-slate-900 mb-12 leading-tight">Let's <span class="italic text-academic-green">connect</span>.</h3>
+                <p class="text-xl text-slate-600 font-serif mb-12 max-w-2xl mx-auto">
+                    Whether you want to talk about mathematics education, ed-tech, or just say hello — I'd love to hear from you.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-6 justify-center">
+                    <a class="bg-academic-blue text-white px-12 py-5 font-bold uppercase text-xs tracking-widest hover:bg-academic-green transition-all shadow-lg" href="mailto:hello@benfarren.co.uk">
+                        Send an Email
+                    </a>
+                    <a class="border border-slate-200 px-12 py-5 font-bold uppercase text-xs tracking-widest hover:bg-slate-50 transition-all text-slate-600" href="https://www.linkedin.com/in/ben-farren-39174797/" target="_blank">
+                        Connect on LinkedIn
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
 
     <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2025 Ben Farren. All rights reserved.</p>
+    <footer class="border-t border-slate-200 bg-white px-6 lg:px-16 py-12 flex flex-col md:flex-row justify-between items-center gap-8">
+        <div class="flex items-center gap-4">
+            <span class="font-serif font-bold text-xl text-slate-900">BF</span>
+            <span class="font-serif text-sm text-slate-500 italic">Director of Mathematics</span>
+        </div>
+        <div class="flex gap-12 font-mono text-[10px] uppercase tracking-widest text-slate-400">
+            <span>&copy; 2025 Ben Farren</span>
+        </div>
+        <div class="flex gap-4">
+            <a class="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:border-academic-green hover:text-academic-green transition-colors" href="https://x.com/bfarren94" target="_blank" aria-label="X (Twitter)">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+            </a>
+            <a class="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:border-academic-green hover:text-academic-green transition-colors" href="https://www.linkedin.com/in/ben-farren-39174797/" target="_blank" aria-label="LinkedIn">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                </svg>
+            </a>
+            <a class="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:border-academic-green hover:text-academic-green transition-colors" href="https://github.com/bencircadian" target="_blank" aria-label="GitHub">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                </svg>
+            </a>
         </div>
     </footer>
-
-    <script src="script.js"></script>
 </body>
 </html>

@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:0.15"/>
+      <stop offset="100%" style="stop-color:#0a0a0b;stop-opacity:0"/>
+    </linearGradient>
+    <linearGradient id="tealGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#14b8a6;stop-opacity:0.1"/>
+      <stop offset="100%" style="stop-color:#0a0a0b;stop-opacity:0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#0a0a0b"/>
+
+  <!-- Ambient glow effects -->
+  <ellipse cx="900" cy="150" rx="400" ry="300" fill="url(#glow)"/>
+  <ellipse cx="200" cy="500" rx="300" ry="200" fill="url(#tealGlow)"/>
+
+  <!-- Grid pattern (subtle) -->
+  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1c1c1f" stroke-width="1"/>
+  </pattern>
+  <rect width="1200" height="630" fill="url(#grid)" opacity="0.5"/>
+
+  <!-- Mathematical notation decorations -->
+  <text x="1050" y="120" font-family="Georgia, serif" font-size="120" fill="#1c1c1f" opacity="0.4">∑</text>
+  <text x="80" y="580" font-family="Georgia, serif" font-size="80" fill="#1c1c1f" opacity="0.4">∫</text>
+  <text x="1100" y="500" font-family="Georgia, serif" font-size="60" fill="#1c1c1f" opacity="0.3">π</text>
+
+  <!-- Corner decoration -->
+  <path d="M 60 60 L 60 100 M 60 60 L 100 60" stroke="#f59e0b" stroke-width="3" fill="none"/>
+
+  <!-- Logo -->
+  <text x="80" y="180" font-family="Georgia, serif" font-size="64" font-weight="bold" fill="#f5f5f0">BF</text>
+  <rect x="80" y="190" width="70" height="3" fill="#f59e0b"/>
+
+  <!-- Divider -->
+  <rect x="170" y="140" width="1" height="60" fill="#2a2a2d"/>
+
+  <!-- Name and title -->
+  <text x="190" y="160" font-family="Georgia, serif" font-size="24" fill="#f5f5f0">Ben Farren</text>
+  <text x="190" y="190" font-family="monospace" font-size="14" fill="#a3a39e" letter-spacing="2">DIRECTOR OF MATHEMATICS</text>
+
+  <!-- Main headline -->
+  <text x="80" y="320" font-family="Georgia, serif" font-size="72" fill="#f5f5f0">Full time</text>
+  <text x="420" y="320" font-family="Georgia, serif" font-size="72" font-style="italic" fill="#f59e0b">educator</text>
+  <text x="80" y="410" font-family="Georgia, serif" font-size="72" fill="#f5f5f0">part time</text>
+  <text x="420" y="410" font-family="Georgia, serif" font-size="72" font-style="italic" fill="#14b8a6">tinkerer</text>
+
+  <!-- Tagline -->
+  <text x="80" y="500" font-family="Arial, sans-serif" font-size="24" fill="#a3a39e">Building ed-tech tools that solve real classroom problems</text>
+
+  <!-- URL -->
+  <text x="80" y="580" font-family="monospace" font-size="18" fill="#f59e0b" letter-spacing="1">benfarren.co.uk</text>
+
+  <!-- Bottom accent line -->
+  <rect x="0" y="620" width="1200" height="10" fill="#f59e0b" opacity="0.8"/>
+</svg>

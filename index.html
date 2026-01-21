@@ -1,371 +1,643 @@
 <!DOCTYPE html>
-<html class="light" lang="en">
+<html lang="en">
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>Ben Farren | Director of Mathematics</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Inter:wght@100..900&family=JetBrains+Mono:wght@300;500&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <script>
         tailwind.config = {
-            darkMode: "class",
             theme: {
                 extend: {
                     colors: {
-                        "academic-blue": "#0f172a",
-                        "academic-green": "#166534",
-                        "paper-bg": "#f8fafc",
-                        "accent-teal": "#0d9488",
-                        "data-line": "#334155",
-                        "engram-purple": "#6366f1",
-                        "engram-dark": "#525252",
+                        "noir": "#0a0a0b",
+                        "noir-light": "#141416",
+                        "noir-lighter": "#1c1c1f",
+                        "chalk": "#f5f5f0",
+                        "chalk-dim": "#a3a39e",
+                        "amber": "#f59e0b",
+                        "amber-dim": "#d97706",
+                        "teal": "#14b8a6",
+                        "violet": "#8b5cf6",
                     },
                     fontFamily: {
+                        "display": ["Lora", "Georgia", "serif"],
+                        "body": ["Outfit", "system-ui", "sans-serif"],
                         "mono": ["JetBrains Mono", "monospace"],
-                        "sans": ["Inter", "sans-serif"],
-                        "serif": ["Crimson Pro", "serif"]
+                    },
+                    animation: {
+                        "fade-up": "fadeUp 0.8s ease-out forwards",
+                        "fade-in": "fadeIn 0.6s ease-out forwards",
+                        "slide-in": "slideIn 0.8s ease-out forwards",
+                        "draw": "draw 1.5s ease-out forwards",
+                        "pulse-slow": "pulse 3s ease-in-out infinite",
+                    },
+                    keyframes: {
+                        fadeUp: {
+                            "0%": { opacity: "0", transform: "translateY(30px)" },
+                            "100%": { opacity: "1", transform: "translateY(0)" }
+                        },
+                        fadeIn: {
+                            "0%": { opacity: "0" },
+                            "100%": { opacity: "1" }
+                        },
+                        slideIn: {
+                            "0%": { opacity: "0", transform: "translateX(-30px)" },
+                            "100%": { opacity: "1", transform: "translateX(0)" }
+                        },
+                        draw: {
+                            "0%": { strokeDashoffset: "1000" },
+                            "100%": { strokeDashoffset: "0" }
+                        }
                     }
                 },
             },
         }
     </script>
-    <style type="text/tailwindcss">
-        @layer base {
-            body {
-                @apply bg-paper-bg text-slate-800 font-sans selection:bg-accent-teal selection:text-white;
-            }
+    <style>
+        /* Grain overlay */
+        .grain::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            z-index: 9999;
         }
-        .graph-paper {
+
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Selection styling */
+        ::selection {
+            background: #f59e0b;
+            color: #0a0a0b;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0a0b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2a2a2d;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3a3a3d;
+        }
+
+        /* Animated underline */
+        .hover-line {
+            position: relative;
+        }
+        .hover-line::after {
+            content: "";
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: #f59e0b;
+            transition: width 0.3s ease;
+        }
+        .hover-line:hover::after {
+            width: 100%;
+        }
+
+        /* Stagger animation delays */
+        .stagger-1 { animation-delay: 0.1s; }
+        .stagger-2 { animation-delay: 0.2s; }
+        .stagger-3 { animation-delay: 0.3s; }
+        .stagger-4 { animation-delay: 0.4s; }
+        .stagger-5 { animation-delay: 0.5s; }
+        .stagger-6 { animation-delay: 0.6s; }
+
+        /* Initial state for animations */
+        .animate-on-load {
+            opacity: 0;
+        }
+
+        /* Geometric pattern */
+        .geo-pattern {
             background-image:
-                linear-gradient(to right, #e2e8f0 1px, transparent 1px),
-                linear-gradient(to bottom, #e2e8f0 1px, transparent 1px);
-            background-size: 24px 24px;
+                linear-gradient(30deg, #1c1c1f 12%, transparent 12.5%, transparent 87%, #1c1c1f 87.5%, #1c1c1f),
+                linear-gradient(150deg, #1c1c1f 12%, transparent 12.5%, transparent 87%, #1c1c1f 87.5%, #1c1c1f),
+                linear-gradient(30deg, #1c1c1f 12%, transparent 12.5%, transparent 87%, #1c1c1f 87.5%, #1c1c1f),
+                linear-gradient(150deg, #1c1c1f 12%, transparent 12.5%, transparent 87%, #1c1c1f 87.5%, #1c1c1f),
+                linear-gradient(60deg, #1c1c1f77 25%, transparent 25.5%, transparent 75%, #1c1c1f77 75%, #1c1c1f77);
+            background-size: 80px 140px;
+            background-position: 0 0, 0 0, 40px 70px, 40px 70px, 0 0;
         }
-        .graph-paper-fine {
-            background-image:
-                linear-gradient(to right, #f1f5f9 1px, transparent 1px),
-                linear-gradient(to bottom, #f1f5f9 1px, transparent 1px);
-            background-size: 6px 6px;
+
+        /* Project card hover */
+        .project-card {
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.4s ease;
         }
-        .module-card {
-            @apply border-t-4 border-academic-blue bg-white shadow-sm transition-all duration-300;
+        .project-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Diagonal line decoration */
+        .diagonal-lines {
+            background: repeating-linear-gradient(
+                -45deg,
+                transparent,
+                transparent 10px,
+                #1c1c1f 10px,
+                #1c1c1f 11px
+            );
+        }
+
+        /* Glowing text effect */
+        .glow-amber {
+            text-shadow: 0 0 40px rgba(245, 158, 11, 0.3);
+        }
+
+        /* Scroll reveal */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Border animation */
+        @keyframes borderGrow {
+            0% { transform: scaleX(0); }
+            100% { transform: scaleX(1); }
+        }
+        .border-animate {
+            transform: scaleX(0);
+            transform-origin: left;
+            animation: borderGrow 0.8s ease-out forwards;
+            animation-delay: 0.5s;
         }
     </style>
 </head>
-<body class="relative min-h-screen">
-    <!-- Background grid pattern -->
-    <div class="fixed inset-0 graph-paper opacity-60 pointer-events-none"></div>
-    <div class="fixed inset-0 graph-paper-fine opacity-40 pointer-events-none"></div>
-
+<body class="bg-noir text-chalk font-body grain">
     <!-- Navigation -->
-    <nav class="sticky top-0 h-20 border-b border-slate-200 bg-white/90 backdrop-blur-md flex items-center justify-between px-6 lg:px-16 z-50">
-        <a href="#" class="flex items-center gap-4 hover:opacity-80 transition-opacity">
-            <span class="text-3xl font-serif font-bold text-academic-blue">BF</span>
-            <div class="h-8 w-px bg-slate-200"></div>
-            <div class="flex flex-col">
-                <span class="font-serif italic text-sm tracking-tight text-slate-900">Ben Farren</span>
-                <span class="font-mono text-[10px] uppercase tracking-tighter text-slate-500">Director of Mathematics</span>
+    <nav class="fixed top-0 w-full z-50 bg-noir/80 backdrop-blur-xl border-b border-chalk/5">
+        <div class="max-w-7xl mx-auto px-6 lg:px-12">
+            <div class="flex items-center justify-between h-20">
+                <a href="#" class="group flex items-center gap-4">
+                    <div class="relative">
+                        <span class="font-display text-3xl font-bold tracking-tight">BF</span>
+                        <div class="absolute -bottom-1 left-0 w-full h-px bg-amber scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+                    </div>
+                    <div class="hidden sm:block h-8 w-px bg-chalk/10"></div>
+                    <div class="hidden sm:flex flex-col">
+                        <span class="font-display text-sm tracking-wide">Ben Farren</span>
+                        <span class="font-mono text-[10px] text-chalk-dim tracking-wider uppercase">Dir. of Mathematics</span>
+                    </div>
+                </a>
+                <div class="hidden md:flex items-center gap-12">
+                    <a class="font-mono text-xs uppercase tracking-widest text-chalk-dim hover:text-amber transition-colors hover-line" href="#about">About</a>
+                    <a class="font-mono text-xs uppercase tracking-widest text-chalk-dim hover:text-amber transition-colors hover-line" href="#projects">Projects</a>
+                    <a class="font-mono text-xs uppercase tracking-widest text-chalk-dim hover:text-amber transition-colors hover-line" href="#approach">Approach</a>
+                    <a class="relative group px-6 py-2.5 overflow-hidden" href="#contact">
+                        <span class="absolute inset-0 bg-amber transition-transform duration-300 group-hover:scale-105"></span>
+                        <span class="relative font-mono text-xs uppercase tracking-widest text-noir font-medium">Contact</span>
+                    </a>
+                </div>
+                <!-- Mobile menu button -->
+                <button class="md:hidden text-chalk" onclick="document.getElementById('mobile-menu').classList.toggle('hidden')">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
             </div>
-        </a>
-        <div class="hidden md:flex items-center gap-10 font-sans text-xs font-bold uppercase tracking-widest text-slate-600">
-            <a class="hover:text-academic-green transition-colors" href="#about">About</a>
-            <a class="hover:text-academic-green transition-colors" href="#projects">Projects</a>
-            <a class="hover:text-academic-green transition-colors" href="#approach">Approach</a>
-            <a class="bg-academic-blue text-white px-5 py-2 hover:bg-academic-green transition-colors" href="#contact">Contact</a>
+        </div>
+        <!-- Mobile menu -->
+        <div id="mobile-menu" class="hidden md:hidden border-t border-chalk/5 bg-noir/95 backdrop-blur-xl">
+            <div class="px-6 py-6 space-y-4">
+                <a class="block font-mono text-sm uppercase tracking-widest text-chalk-dim hover:text-amber transition-colors" href="#about">About</a>
+                <a class="block font-mono text-sm uppercase tracking-widest text-chalk-dim hover:text-amber transition-colors" href="#projects">Projects</a>
+                <a class="block font-mono text-sm uppercase tracking-widest text-chalk-dim hover:text-amber transition-colors" href="#approach">Approach</a>
+                <a class="block font-mono text-sm uppercase tracking-widest text-amber" href="#contact">Contact</a>
+            </div>
         </div>
     </nav>
 
-    <main class="relative z-10">
+    <main>
         <!-- Hero Section -->
-        <section class="max-w-7xl mx-auto px-6 lg:px-16 py-24 md:py-36" id="about">
-            <div class="grid lg:grid-cols-12 gap-12 items-center">
-                <div class="lg:col-span-7">
-                    <h1 class="text-6xl md:text-8xl font-serif text-slate-900 leading-tight mb-8">
-                        Full time <span class="italic text-academic-green">educator</span>,<br/>
-                        part time <span class="italic text-academic-blue">tinkerer</span>
-                    </h1>
-                    <p class="text-xl md:text-2xl text-slate-600 font-serif leading-relaxed max-w-2xl">
-                        Director of Mathematics frustrated by tools that don't work in real classrooms. So I build my own. Bridging pedagogy and technology through practical software that solves real problems.
-                    </p>
-                    <div class="mt-16 flex flex-wrap gap-12 border-t border-slate-200 pt-10">
-                        <div>
-                            <div class="text-[10px] font-mono text-slate-400 uppercase tracking-widest mb-1">Years Teaching</div>
-                            <div class="text-4xl font-serif text-slate-900">9</div>
+        <section class="min-h-screen flex items-center relative overflow-hidden pt-20" id="about">
+            <!-- Background decorations -->
+            <div class="absolute top-1/4 right-0 w-96 h-96 bg-amber/5 rounded-full blur-3xl"></div>
+            <div class="absolute bottom-0 left-1/4 w-64 h-64 bg-violet/5 rounded-full blur-3xl"></div>
+
+            <!-- Mathematical notation floating elements -->
+            <div class="absolute top-32 right-12 lg:right-32 font-mono text-chalk/5 text-8xl select-none animate-on-load animate-fade-in stagger-5">∑</div>
+            <div class="absolute bottom-32 left-8 lg:left-24 font-mono text-chalk/5 text-6xl select-none animate-on-load animate-fade-in stagger-6">∫</div>
+            <div class="absolute top-1/2 right-1/4 font-mono text-chalk/5 text-4xl select-none animate-on-load animate-fade-in stagger-4">π</div>
+
+            <div class="max-w-7xl mx-auto px-6 lg:px-12 py-24 w-full">
+                <div class="grid lg:grid-cols-12 gap-16 items-center">
+                    <div class="lg:col-span-7 space-y-12">
+                        <!-- Eyebrow -->
+                        <div class="animate-on-load animate-fade-up stagger-1">
+                            <span class="inline-flex items-center gap-3 font-mono text-xs tracking-[0.3em] uppercase text-amber">
+                                <span class="w-12 h-px bg-amber"></span>
+                                Available for Collaboration
+                            </span>
                         </div>
-                        <div>
-                            <div class="text-[10px] font-mono text-slate-400 uppercase tracking-widest mb-1">Students Reached</div>
-                            <div class="text-4xl font-serif text-academic-green">Thousands</div>
+
+                        <!-- Main headline -->
+                        <h1 class="animate-on-load animate-fade-up stagger-2">
+                            <span class="block font-display text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-light leading-[0.95] tracking-tight">
+                                Full time
+                            </span>
+                            <span class="block font-display text-5xl sm:text-6xl lg:text-7xl xl:text-8xl italic font-normal leading-[0.95] tracking-tight text-amber glow-amber">
+                                educator
+                            </span>
+                            <span class="block font-display text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-light leading-[0.95] tracking-tight mt-2">
+                                part time
+                            </span>
+                            <span class="block font-display text-5xl sm:text-6xl lg:text-7xl xl:text-8xl italic font-normal leading-[0.95] tracking-tight text-teal">
+                                tinkerer
+                            </span>
+                        </h1>
+
+                        <!-- Description -->
+                        <p class="text-lg sm:text-xl text-chalk-dim font-light leading-relaxed max-w-xl animate-on-load animate-fade-up stagger-3">
+                            Director of Mathematics frustrated by tools that don't work in real classrooms. <span class="text-chalk">So I build my own.</span> Bridging pedagogy and technology through practical software that solves real problems.
+                        </p>
+
+                        <!-- Stats row -->
+                        <div class="flex flex-wrap gap-12 pt-8 border-t border-chalk/10 animate-on-load animate-fade-up stagger-4">
+                            <div class="border-animate">
+                                <div class="font-mono text-[10px] text-chalk-dim uppercase tracking-[0.2em] mb-2">Years Teaching</div>
+                                <div class="font-display text-4xl font-medium">9<span class="text-amber">+</span></div>
+                            </div>
+                            <div>
+                                <div class="font-mono text-[10px] text-chalk-dim uppercase tracking-[0.2em] mb-2">Students Reached</div>
+                                <div class="font-display text-4xl font-medium text-teal">Thousands</div>
+                            </div>
+                            <div>
+                                <div class="font-mono text-[10px] text-chalk-dim uppercase tracking-[0.2em] mb-2">Progress</div>
+                                <div class="font-display text-4xl font-medium">Above <span class="text-amber italic">avg</span></div>
+                            </div>
                         </div>
-                        <div>
-                            <div class="text-[10px] font-mono text-slate-400 uppercase tracking-widest mb-1">Student Progress</div>
-                            <div class="text-4xl font-serif text-slate-900">Above Average</div>
+                    </div>
+
+                    <!-- Right side visual -->
+                    <div class="lg:col-span-5 relative animate-on-load animate-fade-in stagger-5">
+                        <div class="relative">
+                            <!-- Main card -->
+                            <div class="bg-noir-light border border-chalk/10 p-8 lg:p-12">
+                                <svg class="w-full aspect-square" viewBox="0 0 200 200">
+                                    <!-- Grid lines -->
+                                    <defs>
+                                        <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                                            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#1c1c1f" stroke-width="1"/>
+                                        </pattern>
+                                    </defs>
+                                    <rect width="200" height="200" fill="url(#grid)"/>
+
+                                    <!-- Axes -->
+                                    <line x1="30" y1="170" x2="180" y2="170" stroke="#2a2a2d" stroke-width="1"/>
+                                    <line x1="30" y1="20" x2="30" y2="170" stroke="#2a2a2d" stroke-width="1"/>
+
+                                    <!-- Growth curve with animation -->
+                                    <path d="M30,160 Q80,140 100,100 T170,40" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="1000" stroke-dashoffset="1000" class="animate-draw" style="animation-delay: 0.8s"/>
+
+                                    <!-- Area under curve -->
+                                    <path d="M30,160 Q80,140 100,100 T170,40 L170,170 L30,170 Z" fill="#f59e0b" opacity="0.1"/>
+
+                                    <!-- Data points -->
+                                    <circle cx="50" cy="155" r="4" fill="#14b8a6"/>
+                                    <circle cx="80" cy="135" r="4" fill="#14b8a6"/>
+                                    <circle cx="110" cy="95" r="4" fill="#f59e0b"/>
+                                    <circle cx="140" cy="60" r="4" fill="#f59e0b"/>
+                                    <circle cx="165" cy="45" r="4" fill="#f59e0b"/>
+
+                                    <!-- Labels -->
+                                    <text x="100" y="190" fill="#6b6b66" font-family="JetBrains Mono" font-size="8" text-anchor="middle">TIME →</text>
+                                    <text x="10" y="100" fill="#6b6b66" font-family="JetBrains Mono" font-size="8" transform="rotate(-90 10 100)">MASTERY →</text>
+                                </svg>
+                            </div>
+
+                            <!-- Floating accent card -->
+                            <div class="absolute -bottom-6 -right-6 bg-amber px-6 py-4 shadow-2xl">
+                                <span class="font-mono text-[9px] uppercase tracking-widest text-noir/60 block mb-1">Philosophy</span>
+                                <span class="font-display text-xl text-noir font-medium">Build to teach better</span>
+                            </div>
+
+                            <!-- Corner decoration -->
+                            <div class="absolute -top-4 -left-4 w-8 h-8 border-l-2 border-t-2 border-amber"></div>
                         </div>
                     </div>
                 </div>
-                <div class="lg:col-span-5 relative">
-                    <div class="aspect-square bg-white border border-slate-200 shadow-2xl p-8 flex items-center justify-center">
-                        <svg class="w-full h-full overflow-visible" viewBox="0 0 200 200">
-                            <line stroke="#e2e8f0" stroke-width="1" x1="0" x2="200" y1="180" y2="180"></line>
-                            <line stroke="#e2e8f0" stroke-width="1" x1="20" x2="20" y1="0" y2="200"></line>
-                            <path d="M20,160 Q100,80 180,40 L180,80 Q100,120 20,180 Z" fill="#166534" opacity="0.1"></path>
-                            <path d="M20,170 Q100,100 180,60" fill="none" stroke="#166534" stroke-width="2"></path>
-                            <circle cx="40" cy="155" fill="#0f172a" r="3"></circle>
-                            <circle cx="70" cy="130" fill="#0f172a" r="3"></circle>
-                            <circle cx="110" cy="95" fill="#166534" r="3"></circle>
-                            <circle cx="150" cy="70" fill="#166534" r="3"></circle>
-                            <circle cx="170" cy="55" fill="#166534" r="3"></circle>
-                            <text fill="#94a3b8" font-family="JetBrains Mono" font-size="5" x="60" y="195">TIME</text>
-                            <text fill="#94a3b8" font-family="JetBrains Mono" font-size="5" transform="rotate(-90 15 100)" x="15" y="100">UNDERSTANDING</text>
-                        </svg>
-                        <div class="absolute -bottom-4 -right-4 bg-academic-blue text-white px-6 py-4 shadow-xl">
-                            <span class="font-mono text-[9px] uppercase block mb-1">Philosophy</span>
-                            <span class="text-xl font-serif">Build to teach better</span>
-                        </div>
-                    </div>
+
+                <!-- Scroll indicator -->
+                <div class="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 animate-on-load animate-fade-in stagger-6">
+                    <span class="font-mono text-[10px] uppercase tracking-widest text-chalk-dim">Scroll</span>
+                    <div class="w-px h-12 bg-gradient-to-b from-amber to-transparent"></div>
                 </div>
             </div>
         </section>
 
         <!-- Projects Section -->
-        <section class="max-w-7xl mx-auto px-6 lg:px-16 pb-32 space-y-16" id="projects">
-            <div class="text-center mb-16">
-                <h2 class="text-xs font-mono font-bold text-academic-green mb-4 tracking-[0.2em] uppercase">Side Projects</h2>
-                <h3 class="text-5xl font-serif text-slate-900">Things I've Built</h3>
-            </div>
-
-            <!-- Project 1: Engram.study -->
-            <div class="module-card p-0 overflow-hidden border-t-4 border-engram-purple">
-                <div class="grid lg:grid-cols-2 divide-x divide-slate-100">
-                    <div class="p-8 lg:p-16">
-                        <span class="text-[10px] font-mono text-engram-purple uppercase tracking-widest font-bold">Project 01 // engram.study</span>
-                        <h3 class="text-4xl font-serif text-slate-900 mt-4 mb-10">Spaced Repetition for Students</h3>
-                        <div class="space-y-10">
-                            <div>
-                                <h4 class="text-xs font-bold uppercase text-slate-400 mb-3 tracking-widest">The Problem</h4>
-                                <p class="text-slate-600 font-serif text-lg leading-relaxed">
-                                    Students forget what they've learned. Traditional homework doesn't account for the forgetting curve, leading to constant re-teaching and lost progress over holidays.
-                                </p>
-                            </div>
-                            <div>
-                                <h4 class="text-xs font-bold uppercase text-slate-400 mb-3 tracking-widest">The Solution</h4>
-                                <p class="text-slate-600 font-serif text-lg leading-relaxed">
-                                    A spaced repetition platform with AI-generated high-quality questions. Teachers can create custom DNAs (Do Now Activities) with deep customization to match their curriculum and teaching style.
-                                </p>
-                            </div>
-                            <div class="bg-engram-purple/5 p-6 border-l-4 border-engram-purple">
-                                <h4 class="text-xs font-bold uppercase text-engram-purple mb-1 tracking-widest">Key Features</h4>
-                                <ul class="text-slate-600 font-serif text-lg space-y-2 mt-3">
-                                    <li>• Adaptive spaced repetition algorithm</li>
-                                    <li>• AI-powered question generation</li>
-                                    <li>• Custom DNA/Starter Activity builder</li>
-                                    <li>• Teacher dashboard with analytics</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <a href="https://engram.study" target="_blank" class="inline-flex items-center gap-2 mt-8 bg-engram-purple text-white px-6 py-3 font-mono text-sm uppercase tracking-widest hover:bg-engram-purple/90 transition-colors rounded-lg">
-                            Visit engram.study
-                            <span class="material-symbols-outlined text-sm">arrow_outward</span>
-                        </a>
-                    </div>
-                    <div class="bg-slate-50 flex items-center justify-center p-12 relative overflow-hidden">
-                        <div class="w-full max-w-md grid grid-cols-7 gap-1">
-                            <!-- Retention heatmap visualization -->
-                            <div class="aspect-square bg-engram-purple opacity-10"></div>
-                            <div class="aspect-square bg-engram-purple opacity-20"></div>
-                            <div class="aspect-square bg-engram-purple opacity-40"></div>
-                            <div class="aspect-square bg-engram-purple opacity-10"></div>
-                            <div class="aspect-square bg-engram-purple opacity-5"></div>
-                            <div class="aspect-square bg-engram-purple opacity-30"></div>
-                            <div class="aspect-square bg-engram-purple opacity-60"></div>
-                            <div class="aspect-square bg-engram-purple opacity-40"></div>
-                            <div class="aspect-square bg-engram-purple opacity-80"></div>
-                            <div class="aspect-square bg-engram-purple opacity-100"></div>
-                            <div class="aspect-square bg-engram-purple opacity-90"></div>
-                            <div class="aspect-square bg-engram-purple opacity-40"></div>
-                            <div class="aspect-square bg-engram-purple opacity-20"></div>
-                            <div class="aspect-square bg-engram-purple opacity-10"></div>
-                            <div class="aspect-square bg-engram-purple opacity-10"></div>
-                            <div class="aspect-square bg-engram-purple opacity-30"></div>
-                            <div class="aspect-square bg-engram-purple opacity-50"></div>
-                            <div class="aspect-square bg-engram-purple opacity-60"></div>
-                            <div class="aspect-square bg-engram-purple opacity-20"></div>
-                            <div class="aspect-square bg-engram-purple opacity-5"></div>
-                            <div class="aspect-square bg-engram-purple opacity-10"></div>
-                            <div class="aspect-square bg-engram-purple opacity-30"></div>
-                            <div class="aspect-square bg-engram-purple opacity-50"></div>
-                            <div class="aspect-square bg-engram-purple opacity-70"></div>
-                            <div class="aspect-square bg-engram-purple opacity-80"></div>
-                            <div class="aspect-square bg-engram-purple opacity-40"></div>
-                            <div class="aspect-square bg-engram-purple opacity-15"></div>
-                            <div class="aspect-square bg-engram-purple opacity-20"></div>
-                        </div>
-                        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4">
-                            <span class="text-[9px] font-mono text-slate-400">RETENTION_INTENSITY</span>
-                            <div class="h-2 w-24 bg-gradient-to-r from-engram-purple/5 to-engram-purple rounded"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Project 2: Engram Planner -->
-            <div class="module-card p-0 overflow-hidden border-t-4 border-engram-purple">
-                <div class="grid lg:grid-cols-2">
-                    <div class="bg-engram-dark flex items-center justify-center p-12 order-2 lg:order-1 relative overflow-hidden">
-                        <div class="w-full max-w-sm">
-                            <!-- Planner modal visualization matching planner.engram.study -->
-                            <div class="bg-white rounded-xl shadow-2xl p-6 space-y-4">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex gap-1">
-                                        <span class="w-2 h-2 rounded-full bg-engram-purple"></span>
-                                        <span class="w-2 h-2 rounded-full bg-slate-200"></span>
-                                        <span class="w-2 h-2 rounded-full bg-slate-200"></span>
-                                        <span class="w-2 h-2 rounded-full bg-slate-200"></span>
-                                    </div>
-                                    <span class="font-mono text-[10px] text-slate-400">Skip Setup</span>
-                                </div>
-                                <div class="text-center py-4">
-                                    <span class="material-symbols-outlined text-4xl text-slate-700 mb-3 block">calendar_month</span>
-                                    <h4 class="font-sans font-semibold text-slate-900 text-lg">Welcome to Engram Planner</h4>
-                                    <p class="text-slate-500 text-sm mt-2">Let's set up your timetable so the planner matches your schedule.</p>
-                                </div>
-                                <button class="w-full bg-engram-purple text-white py-3 rounded-lg font-medium text-sm">
-                                    Get Started
-                                </button>
-                            </div>
-                        </div>
-                        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4">
-                            <span class="text-[9px] font-mono text-slate-400">GOODBYE_EXCEL_SPREADSHEETS</span>
-                        </div>
-                    </div>
-                    <div class="p-8 lg:p-16 order-1 lg:order-2">
-                        <span class="text-[10px] font-mono text-engram-purple uppercase tracking-widest font-bold">Project 02 // planner.engram.study</span>
-                        <h3 class="text-4xl font-serif text-slate-900 mt-4 mb-10">Engram Planner</h3>
-                        <div class="space-y-10">
-                            <div>
-                                <h4 class="text-xs font-bold uppercase text-slate-400 mb-3 tracking-widest">The Problem</h4>
-                                <p class="text-slate-600 font-serif text-lg leading-relaxed">
-                                    Curriculum planning is scattered across spreadsheets and folders. Excel is clunky. Resources aren't linked to lessons. Teachers waste time hunting for materials instead of teaching.
-                                </p>
-                            </div>
-                            <div>
-                                <h4 class="text-xs font-bold uppercase text-slate-400 mb-3 tracking-widest">The Solution</h4>
-                                <p class="text-slate-600 font-serif text-lg leading-relaxed">
-                                    A lesson and curriculum planner that links directly to PowerPoints and resources. Built-in task planner. Browser-based, quick, responsive, and auto-saves instantly. No more lost work.
-                                </p>
-                            </div>
-                            <div class="bg-engram-purple/5 p-6 border-l-4 border-engram-purple">
-                                <h4 class="text-xs font-bold uppercase text-engram-purple mb-1 tracking-widest">Key Features</h4>
-                                <ul class="text-slate-600 font-serif text-lg space-y-2 mt-3">
-                                    <li>• Link lessons to PPTs and resources in one place</li>
-                                    <li>• Built-in task planner for lesson prep</li>
-                                    <li>• Instant cloud saves — no lost work</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <span class="inline-flex items-center gap-2 mt-8 text-slate-400 font-mono text-sm uppercase tracking-widest">
-                            Currently in testing
-                            <span class="w-2 h-2 bg-engram-purple rounded-full animate-pulse"></span>
+        <section class="py-32 relative" id="projects">
+            <div class="max-w-7xl mx-auto px-6 lg:px-12">
+                <!-- Section header -->
+                <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mb-20 reveal">
+                    <div>
+                        <span class="font-mono text-xs tracking-[0.3em] uppercase text-amber flex items-center gap-3 mb-4">
+                            <span class="w-8 h-px bg-amber"></span>
+                            Side Projects
                         </span>
+                        <h2 class="font-display text-5xl lg:text-6xl font-light tracking-tight">
+                            Things I've <span class="italic text-amber">Built</span>
+                        </h2>
                     </div>
+                    <p class="text-chalk-dim max-w-md text-lg">
+                        Tools born from real classroom frustrations. Each project solves a problem I faced firsthand.
+                    </p>
                 </div>
-            </div>
 
-            <!-- Project 3: Divvy -->
-            <div class="module-card p-0 overflow-hidden border-t-4 border-accent-teal">
-                <div class="grid lg:grid-cols-2 divide-x divide-slate-100">
-                    <div class="p-8 lg:p-16">
-                        <span class="text-[10px] font-mono text-accent-teal uppercase tracking-widest font-bold">Project 03 // divvyapp.co.uk</span>
-                        <h3 class="text-4xl font-serif text-slate-900 mt-4 mb-10">Divvy</h3>
-                        <div class="space-y-10">
-                            <div>
-                                <h4 class="text-xs font-bold uppercase text-slate-400 mb-3 tracking-widest">The Problem</h4>
-                                <p class="text-slate-600 font-serif text-lg leading-relaxed">
-                                    Household chores cause arguments. Who did what? Who's doing more? Without a fair system, resentment builds and the same conversations happen over and over.
-                                </p>
-                            </div>
-                            <div>
-                                <h4 class="text-xs font-bold uppercase text-slate-400 mb-3 tracking-widest">The Solution</h4>
-                                <p class="text-slate-600 font-serif text-lg leading-relaxed">
-                                    A simple app to track and share household tasks fairly. Log what you do, see who's contributing, and keep the peace at home. No more "I always do everything" debates.
-                                </p>
-                            </div>
-                            <div class="bg-accent-teal/5 p-6 border-l-4 border-accent-teal">
-                                <h4 class="text-xs font-bold uppercase text-accent-teal mb-1 tracking-widest">Key Features</h4>
-                                <ul class="text-slate-600 font-serif text-lg space-y-2 mt-3">
-                                    <li>• Quick task logging for household chores</li>
-                                    <li>• Fair contribution tracking between partners</li>
-                                    <li>• Visual breakdown of who's done what</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <a href="https://www.divvyapp.co.uk" target="_blank" class="inline-flex items-center gap-2 mt-8 bg-accent-teal text-white px-6 py-3 font-mono text-sm uppercase tracking-widest hover:bg-accent-teal/90 transition-colors rounded-lg">
-                            Visit Divvy
-                            <span class="material-symbols-outlined text-sm">arrow_outward</span>
-                        </a>
-                    </div>
-                    <div class="bg-slate-50 flex items-center justify-center p-12 relative overflow-hidden">
-                        <div class="w-full max-w-xs text-center">
-                            <!-- Divvy logo visualization -->
-                            <div class="inline-flex items-center gap-3 mb-6">
-                                <div class="w-14 h-14 bg-accent-teal rounded-xl flex items-center justify-center shadow-lg">
-                                    <span class="text-white text-2xl font-bold">d</span>
+                <!-- Projects grid -->
+                <div class="space-y-8">
+                    <!-- Project 1: Engram.study -->
+                    <article class="project-card bg-noir-light border border-chalk/5 overflow-hidden reveal">
+                        <div class="grid lg:grid-cols-2">
+                            <div class="p-8 lg:p-16 flex flex-col justify-center">
+                                <div class="flex items-center gap-4 mb-8">
+                                    <span class="font-mono text-amber text-sm">01</span>
+                                    <span class="w-12 h-px bg-chalk/20"></span>
+                                    <span class="font-mono text-xs text-chalk-dim uppercase tracking-widest">engram.study</span>
                                 </div>
-                                <span class="text-4xl font-semibold text-slate-700">ivvy</span>
-                            </div>
-                            <p class="text-slate-500 font-serif text-lg italic">Keep the peace, share the work</p>
-                            <div class="mt-8 flex justify-center gap-4">
-                                <div class="bg-white rounded-lg shadow-md p-4 w-24">
-                                    <span class="material-symbols-outlined text-accent-teal text-2xl">cleaning_services</span>
-                                    <div class="text-xs font-mono text-slate-400 mt-2">LOGGED</div>
-                                </div>
-                                <div class="bg-white rounded-lg shadow-md p-4 w-24">
-                                    <span class="material-symbols-outlined text-accent-teal text-2xl">handshake</span>
-                                    <div class="text-xs font-mono text-slate-400 mt-2">SHARED</div>
+                                <h3 class="font-display text-4xl lg:text-5xl font-light mb-6 tracking-tight">
+                                    <span class="italic text-violet">Engram</span>
+                                </h3>
+                                <div class="space-y-8">
+                                    <div>
+                                        <h4 class="font-mono text-[10px] uppercase tracking-[0.2em] text-chalk-dim mb-3">The Problem</h4>
+                                        <p class="text-chalk/70 leading-relaxed">
+                                            Students forget what they've learned. Teachers waste time on scattered planning. The forgetting curve wins, and lessons get repeated instead of building on solid foundations.
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-mono text-[10px] uppercase tracking-[0.2em] text-chalk-dim mb-3">The Solution</h4>
+                                        <p class="text-chalk/70 leading-relaxed">
+                                            <span class="text-chalk">For students:</span> Spaced repetition with AI-generated questions that adapt to each learner. <span class="text-chalk">For staff:</span> DNA (Do Now Activity) builders and planning resources to streamline lesson prep.
+                                        </p>
+                                    </div>
+                                    <div class="flex flex-wrap gap-2">
+                                        <span class="px-3 py-1.5 bg-violet/10 border border-violet/20 font-mono text-xs text-violet">Spaced Repetition</span>
+                                        <span class="px-3 py-1.5 bg-violet/10 border border-violet/20 font-mono text-xs text-violet">AI Questions</span>
+                                        <span class="px-3 py-1.5 bg-violet/10 border border-violet/20 font-mono text-xs text-violet">DNA Builder</span>
+                                        <span class="px-3 py-1.5 bg-violet/10 border border-violet/20 font-mono text-xs text-violet">Planning Tools</span>
+                                    </div>
+                                    <a href="https://engram.study" target="_blank" class="group inline-flex items-center gap-3 font-mono text-sm uppercase tracking-widest text-amber hover:text-chalk transition-colors">
+                                        Visit engram.study
+                                        <span class="material-symbols-outlined text-lg transition-transform group-hover:translate-x-1">arrow_forward</span>
+                                    </a>
                                 </div>
                             </div>
+                            <div class="bg-noir-lighter p-12 flex items-center justify-center relative">
+                                <div class="absolute inset-0 geo-pattern opacity-30"></div>
+                                <!-- Retention heatmap -->
+                                <div class="relative w-full max-w-xs">
+                                    <div class="grid grid-cols-7 gap-1.5">
+                                        <div class="aspect-square bg-violet opacity-10 rounded-sm"></div>
+                                        <div class="aspect-square bg-violet opacity-20 rounded-sm"></div>
+                                        <div class="aspect-square bg-violet opacity-40 rounded-sm"></div>
+                                        <div class="aspect-square bg-violet opacity-10 rounded-sm"></div>
+                                        <div class="aspect-square bg-violet opacity-5 rounded-sm"></div>
+                                        <div class="aspect-square bg-violet opacity-30 rounded-sm"></div>
+                                        <div class="aspect-square bg-violet opacity-60 rounded-sm"></div>
+                                        <div class="aspect-square bg-violet opacity-40 rounded-sm"></div>
+                                        <div class="aspect-square bg-violet opacity-80 rounded-sm"></div>
+                                        <div class="aspect-square bg-violet opacity-100 rounded-sm"></div>
+                                        <div class="aspect-square bg-violet opacity-90 rounded-sm"></div>
+                                        <div class="aspect-square bg-violet opacity-40 rounded-sm"></div>
+                                        <div class="aspect-square bg-violet opacity-20 rounded-sm"></div>
+                                        <div class="aspect-square bg-violet opacity-10 rounded-sm"></div>
+                                        <div class="aspect-square bg-violet opacity-10 rounded-sm"></div>
+                                        <div class="aspect-square bg-violet opacity-30 rounded-sm"></div>
+                                        <div class="aspect-square bg-violet opacity-50 rounded-sm"></div>
+                                        <div class="aspect-square bg-violet opacity-60 rounded-sm"></div>
+                                        <div class="aspect-square bg-violet opacity-20 rounded-sm"></div>
+                                        <div class="aspect-square bg-violet opacity-5 rounded-sm"></div>
+                                        <div class="aspect-square bg-violet opacity-10 rounded-sm"></div>
+                                        <div class="aspect-square bg-violet opacity-30 rounded-sm"></div>
+                                        <div class="aspect-square bg-violet opacity-50 rounded-sm"></div>
+                                        <div class="aspect-square bg-violet opacity-70 rounded-sm"></div>
+                                        <div class="aspect-square bg-violet opacity-80 rounded-sm"></div>
+                                        <div class="aspect-square bg-violet opacity-40 rounded-sm"></div>
+                                        <div class="aspect-square bg-violet opacity-15 rounded-sm"></div>
+                                        <div class="aspect-square bg-violet opacity-20 rounded-sm"></div>
+                                    </div>
+                                    <div class="mt-8 flex items-center justify-center gap-4">
+                                        <span class="font-mono text-[9px] text-chalk-dim uppercase tracking-widest">Retention</span>
+                                        <div class="h-1.5 w-20 bg-gradient-to-r from-violet/10 to-violet rounded-full"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="absolute bottom-6 left-1/2 -translate-x-1/2">
-                            <span class="text-[9px] font-mono text-slate-400">HOUSEHOLD_HARMONY</span>
+                    </article>
+
+                    <!-- Project 2: Engram Planner -->
+                    <article class="project-card bg-noir-light border border-chalk/5 overflow-hidden reveal">
+                        <div class="grid lg:grid-cols-2">
+                            <div class="bg-noir-lighter p-12 flex items-center justify-center relative order-2 lg:order-1">
+                                <div class="absolute inset-0 diagonal-lines opacity-20"></div>
+                                <!-- Planner UI mockup -->
+                                <div class="relative w-full max-w-sm">
+                                    <div class="bg-chalk rounded-xl shadow-2xl p-6 space-y-5 transform rotate-1">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex gap-1.5">
+                                                <span class="w-2.5 h-2.5 rounded-full bg-violet"></span>
+                                                <span class="w-2.5 h-2.5 rounded-full bg-chalk-dim/30"></span>
+                                                <span class="w-2.5 h-2.5 rounded-full bg-chalk-dim/30"></span>
+                                            </div>
+                                            <span class="font-mono text-[10px] text-noir/40">Skip</span>
+                                        </div>
+                                        <div class="text-center py-4">
+                                            <div class="w-12 h-12 mx-auto mb-4 rounded-xl bg-violet/10 flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-2xl text-violet">calendar_month</span>
+                                            </div>
+                                            <h4 class="font-body font-semibold text-noir text-lg">Welcome to Planner</h4>
+                                            <p class="text-noir/50 text-sm mt-2">Let's set up your timetable.</p>
+                                        </div>
+                                        <button class="w-full bg-violet text-chalk py-3 rounded-lg font-medium text-sm">
+                                            Get Started
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-8 lg:p-16 flex flex-col justify-center order-1 lg:order-2">
+                                <div class="flex items-center gap-4 mb-8">
+                                    <span class="font-mono text-amber text-sm">02</span>
+                                    <span class="w-12 h-px bg-chalk/20"></span>
+                                    <span class="font-mono text-xs text-chalk-dim uppercase tracking-widest">planner.engram.study</span>
+                                </div>
+                                <h3 class="font-display text-4xl lg:text-5xl font-light mb-6 tracking-tight">
+                                    Engram<br/><span class="italic text-violet">Planner</span>
+                                </h3>
+                                <div class="space-y-8">
+                                    <div>
+                                        <h4 class="font-mono text-[10px] uppercase tracking-[0.2em] text-chalk-dim mb-3">The Problem</h4>
+                                        <p class="text-chalk/70 leading-relaxed">
+                                            Curriculum planning is scattered across spreadsheets. Excel is clunky. Resources aren't linked to lessons. Teachers waste time hunting for materials.
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-mono text-[10px] uppercase tracking-[0.2em] text-chalk-dim mb-3">The Solution</h4>
+                                        <p class="text-chalk/70 leading-relaxed">
+                                            A lesson planner that links directly to resources. Built-in task management. Browser-based, fast, and auto-saves instantly.
+                                        </p>
+                                    </div>
+                                    <div class="flex flex-wrap gap-2">
+                                        <span class="px-3 py-1.5 bg-violet/10 border border-violet/20 font-mono text-xs text-violet">Resource Linking</span>
+                                        <span class="px-3 py-1.5 bg-violet/10 border border-violet/20 font-mono text-xs text-violet">Task Planner</span>
+                                        <span class="px-3 py-1.5 bg-violet/10 border border-violet/20 font-mono text-xs text-violet">Cloud Sync</span>
+                                    </div>
+                                    <span class="inline-flex items-center gap-3 font-mono text-sm uppercase tracking-widest text-chalk-dim">
+                                        Currently in testing
+                                        <span class="w-2 h-2 bg-violet rounded-full animate-pulse-slow"></span>
+                                    </span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    </article>
+
+                    <!-- Project 3: Divvy -->
+                    <article class="project-card bg-noir-light border border-chalk/5 overflow-hidden reveal">
+                        <div class="grid lg:grid-cols-2">
+                            <div class="p-8 lg:p-16 flex flex-col justify-center">
+                                <div class="flex items-center gap-4 mb-8">
+                                    <span class="font-mono text-amber text-sm">03</span>
+                                    <span class="w-12 h-px bg-chalk/20"></span>
+                                    <span class="font-mono text-xs text-chalk-dim uppercase tracking-widest">divvyapp.co.uk</span>
+                                </div>
+                                <h3 class="font-display text-4xl lg:text-5xl font-light mb-6 tracking-tight">
+                                    <span class="italic text-teal">Divvy</span>
+                                </h3>
+                                <div class="space-y-8">
+                                    <div>
+                                        <h4 class="font-mono text-[10px] uppercase tracking-[0.2em] text-chalk-dim mb-3">The Problem</h4>
+                                        <p class="text-chalk/70 leading-relaxed">
+                                            Household chores cause arguments. Who did what? Who's doing more? Without a fair system, resentment builds.
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-mono text-[10px] uppercase tracking-[0.2em] text-chalk-dim mb-3">The Solution</h4>
+                                        <p class="text-chalk/70 leading-relaxed">
+                                            A simple app to track and share household tasks fairly. Log what you do, see who's contributing, keep the peace.
+                                        </p>
+                                    </div>
+                                    <div class="flex flex-wrap gap-2">
+                                        <span class="px-3 py-1.5 bg-teal/10 border border-teal/20 font-mono text-xs text-teal">Task Logging</span>
+                                        <span class="px-3 py-1.5 bg-teal/10 border border-teal/20 font-mono text-xs text-teal">Fair Tracking</span>
+                                        <span class="px-3 py-1.5 bg-teal/10 border border-teal/20 font-mono text-xs text-teal">Visual Stats</span>
+                                    </div>
+                                    <a href="https://www.divvyapp.co.uk" target="_blank" class="group inline-flex items-center gap-3 font-mono text-sm uppercase tracking-widest text-amber hover:text-chalk transition-colors">
+                                        Visit Divvy
+                                        <span class="material-symbols-outlined text-lg transition-transform group-hover:translate-x-1">arrow_forward</span>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="bg-noir-lighter p-12 flex items-center justify-center relative">
+                                <div class="absolute inset-0 geo-pattern opacity-20"></div>
+                                <div class="relative text-center">
+                                    <!-- Divvy branding -->
+                                    <div class="inline-flex items-center gap-3 mb-8">
+                                        <div class="w-16 h-16 bg-teal rounded-2xl flex items-center justify-center shadow-lg shadow-teal/20">
+                                            <span class="text-chalk text-3xl font-display font-bold">d</span>
+                                        </div>
+                                        <span class="text-5xl font-body font-semibold text-chalk">ivvy</span>
+                                    </div>
+                                    <p class="text-chalk-dim font-display italic text-xl mb-8">Keep the peace, share the work</p>
+                                    <div class="flex justify-center gap-4">
+                                        <div class="bg-noir-light rounded-xl p-5 w-24 border border-chalk/5">
+                                            <span class="material-symbols-outlined text-teal text-2xl mb-2 block">cleaning_services</span>
+                                            <div class="font-mono text-[9px] text-chalk-dim uppercase tracking-wider">Logged</div>
+                                        </div>
+                                        <div class="bg-noir-light rounded-xl p-5 w-24 border border-chalk/5">
+                                            <span class="material-symbols-outlined text-teal text-2xl mb-2 block">handshake</span>
+                                            <div class="font-mono text-[9px] text-chalk-dim uppercase tracking-wider">Shared</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
                 </div>
             </div>
         </section>
 
         <!-- Approach Section -->
-        <section class="bg-academic-blue text-white py-32" id="approach">
-            <div class="max-w-7xl mx-auto px-6 lg:px-16">
-                <div class="grid lg:grid-cols-2 gap-24">
-                    <div>
-                        <h2 class="text-xs font-mono font-bold text-accent-teal mb-4 tracking-[0.2em] uppercase">How I Work</h2>
-                        <h3 class="text-5xl font-serif leading-tight mb-8">Where teaching meets <span class="italic">technology</span>.</h3>
-                        <p class="text-slate-400 font-serif text-xl leading-relaxed mb-12">
+        <section class="py-32 relative overflow-hidden" id="approach">
+            <div class="absolute inset-0 bg-gradient-to-b from-noir via-noir-light to-noir"></div>
+            <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-amber/50 to-transparent"></div>
+            <div class="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-amber/50 to-transparent"></div>
+
+            <div class="max-w-7xl mx-auto px-6 lg:px-12 relative">
+                <div class="grid lg:grid-cols-2 gap-20">
+                    <div class="reveal">
+                        <span class="font-mono text-xs tracking-[0.3em] uppercase text-amber flex items-center gap-3 mb-6">
+                            <span class="w-8 h-px bg-amber"></span>
+                            How I Work
+                        </span>
+                        <h2 class="font-display text-5xl lg:text-6xl font-light tracking-tight mb-8">
+                            Where teaching meets<br/><span class="italic text-amber">technology</span>.
+                        </h2>
+                        <p class="text-chalk-dim text-lg leading-relaxed mb-12">
                             After 9 years in the classroom, I've learned that the best educational tools come from understanding real problems teachers face. I build software that I wish existed when I started teaching.
                         </p>
-                        <div class="grid grid-cols-2 gap-8 border-t border-slate-800 pt-12">
+                        <div class="grid grid-cols-2 gap-8 pt-8 border-t border-chalk/10">
                             <div>
-                                <span class="text-accent-teal text-xs font-mono block mb-2 font-bold uppercase">Education</span>
-                                <p class="text-slate-300 text-sm font-serif italic">Mathematics curriculum, pedagogy, assessment design, data-driven intervention.</p>
+                                <span class="font-mono text-xs text-amber uppercase tracking-[0.15em] block mb-3">Education</span>
+                                <p class="text-chalk-dim text-sm leading-relaxed">Mathematics curriculum, pedagogy, assessment design, data-driven intervention.</p>
                             </div>
                             <div>
-                                <span class="text-accent-teal text-xs font-mono block mb-2 font-bold uppercase">Technology</span>
-                                <p class="text-slate-300 text-sm font-serif italic">Vibe coding with Claude Code. Building tools that solve real classroom problems.</p>
+                                <span class="font-mono text-xs text-amber uppercase tracking-[0.15em] block mb-3">Technology</span>
+                                <p class="text-chalk-dim text-sm leading-relaxed">Vibe coding with Claude Code. Building tools that solve real classroom problems.</p>
                             </div>
                         </div>
                     </div>
+
                     <div class="space-y-6">
-                        <div class="bg-slate-900/50 p-8 border border-slate-800">
-                            <span class="text-3xl font-serif block mb-2">01. Identify the friction</span>
-                            <p class="text-slate-400 text-sm font-sans leading-relaxed">Start with real problems. What wastes teacher time? What causes students to struggle unnecessarily?</p>
+                        <div class="group bg-noir border border-chalk/5 p-8 transition-all hover:border-amber/30 reveal">
+                            <div class="flex items-start gap-6">
+                                <span class="font-display text-5xl text-amber/20 group-hover:text-amber/40 transition-colors">01</span>
+                                <div>
+                                    <h3 class="font-display text-2xl mb-3">Identify the friction</h3>
+                                    <p class="text-chalk-dim text-sm leading-relaxed">Start with real problems. What wastes teacher time? What causes students to struggle unnecessarily?</p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="bg-slate-900/50 p-8 border border-slate-800">
-                            <span class="text-3xl font-serif block mb-2">02. Build fast, test in class</span>
-                            <p class="text-slate-400 text-sm font-sans leading-relaxed">Use AI tools like Claude Code to prototype quickly. Get real feedback from students and colleagues.</p>
+                        <div class="group bg-noir border border-chalk/5 p-8 transition-all hover:border-amber/30 reveal">
+                            <div class="flex items-start gap-6">
+                                <span class="font-display text-5xl text-amber/20 group-hover:text-amber/40 transition-colors">02</span>
+                                <div>
+                                    <h3 class="font-display text-2xl mb-3">Build fast, test in class</h3>
+                                    <p class="text-chalk-dim text-sm leading-relaxed">Use AI tools like Claude Code to prototype quickly. Get real feedback from students and colleagues.</p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="bg-slate-900/50 p-8 border border-slate-800">
-                            <span class="text-3xl font-serif block mb-2">03. Iterate and refine</span>
-                            <p class="text-slate-400 text-sm font-sans leading-relaxed">Good educational software evolves. Listen to users, measure impact, and keep improving.</p>
+                        <div class="group bg-noir border border-chalk/5 p-8 transition-all hover:border-amber/30 reveal">
+                            <div class="flex items-start gap-6">
+                                <span class="font-display text-5xl text-amber/20 group-hover:text-amber/40 transition-colors">03</span>
+                                <div>
+                                    <h3 class="font-display text-2xl mb-3">Iterate and refine</h3>
+                                    <p class="text-chalk-dim text-sm leading-relaxed">Good educational software evolves. Listen to users, measure impact, and keep improving.</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -373,41 +645,69 @@
         </section>
 
         <!-- Beyond Teaching Section -->
-        <section class="py-24 bg-slate-50 relative overflow-hidden" id="beyond">
-            <div class="max-w-4xl mx-auto px-6 text-center">
-                <h2 class="text-xs font-mono font-bold text-academic-green mb-6 tracking-[0.2em] uppercase">Off the Clock</h2>
-                <h3 class="text-4xl md:text-5xl font-serif text-slate-900 mb-8 leading-tight">Beyond the <span class="italic text-academic-blue">Classroom</span></h3>
-                <p class="text-xl text-slate-600 font-serif leading-relaxed max-w-2xl mx-auto">
-                    When I'm not teaching or tinkering with code, you might find me answering obscure questions under studio lights — I've appeared on <span class="italic">Mastermind</span>. Or occasionally treading the boards in amateur theatre, proving that standing in front of 30 teenagers isn't the only kind of performance anxiety I seek out.
+        <section class="py-32 relative overflow-hidden" id="beyond">
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-violet/5 rounded-full blur-3xl"></div>
+
+            <div class="max-w-4xl mx-auto px-6 text-center relative reveal">
+                <span class="font-mono text-xs tracking-[0.3em] uppercase text-amber flex items-center justify-center gap-3 mb-6">
+                    <span class="w-8 h-px bg-amber"></span>
+                    Off the Clock
+                    <span class="w-8 h-px bg-amber"></span>
+                </span>
+                <h2 class="font-display text-5xl lg:text-6xl font-light tracking-tight mb-8">
+                    Beyond the<br/><span class="italic text-teal">Classroom</span>
+                </h2>
+                <p class="text-chalk-dim text-xl leading-relaxed max-w-2xl mx-auto">
+                    When I'm not teaching or tinkering with code, you might find me answering obscure questions under studio lights — I've appeared on <span class="text-chalk italic">Mastermind</span>. Or occasionally treading the boards in amateur theatre, proving that standing in front of 30 teenagers isn't the only kind of performance anxiety I seek out.
                 </p>
-                <div class="mt-12 flex justify-center gap-8">
-                    <div class="flex items-center gap-2 text-slate-400">
-                        <span class="material-symbols-outlined text-xl">psychology</span>
-                        <span class="font-mono text-xs uppercase tracking-wider">Quiz Shows</span>
+                <div class="mt-12 flex justify-center gap-12">
+                    <div class="flex flex-col items-center gap-3 text-chalk-dim hover:text-amber transition-colors cursor-default">
+                        <div class="w-16 h-16 rounded-full border border-chalk/10 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-2xl">psychology</span>
+                        </div>
+                        <span class="font-mono text-xs uppercase tracking-widest">Quiz Shows</span>
                     </div>
-                    <div class="flex items-center gap-2 text-slate-400">
-                        <span class="material-symbols-outlined text-xl">theater_comedy</span>
-                        <span class="font-mono text-xs uppercase tracking-wider">Theatre</span>
+                    <div class="flex flex-col items-center gap-3 text-chalk-dim hover:text-teal transition-colors cursor-default">
+                        <div class="w-16 h-16 rounded-full border border-chalk/10 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-2xl">theater_comedy</span>
+                        </div>
+                        <span class="font-mono text-xs uppercase tracking-widest">Theatre</span>
                     </div>
                 </div>
             </div>
         </section>
 
         <!-- Contact Section -->
-        <section class="py-32 bg-white relative overflow-hidden" id="contact">
-            <div class="absolute right-0 bottom-0 text-[400px] font-serif font-black text-slate-50/50 leading-none select-none -z-10">+</div>
-            <div class="max-w-4xl mx-auto px-6 text-center">
-                <h2 class="text-xs font-mono font-bold text-academic-green mb-6 tracking-[0.2em] uppercase">Get In Touch</h2>
-                <h3 class="text-5xl md:text-7xl font-serif text-slate-900 mb-12 leading-tight">Let's <span class="italic text-academic-green">connect</span>.</h3>
-                <p class="text-xl text-slate-600 font-serif mb-12 max-w-2xl mx-auto">
+        <section class="py-32 relative overflow-hidden" id="contact">
+            <div class="absolute inset-0 bg-gradient-to-t from-noir-light to-noir"></div>
+            <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-chalk/10 to-transparent"></div>
+
+            <!-- Large background text -->
+            <div class="absolute right-0 bottom-0 font-display text-[300px] lg:text-[400px] font-bold text-chalk/[0.02] leading-none select-none pointer-events-none">+</div>
+
+            <div class="max-w-4xl mx-auto px-6 text-center relative reveal">
+                <span class="font-mono text-xs tracking-[0.3em] uppercase text-amber flex items-center justify-center gap-3 mb-6">
+                    <span class="w-8 h-px bg-amber"></span>
+                    Get In Touch
+                    <span class="w-8 h-px bg-amber"></span>
+                </span>
+                <h2 class="font-display text-6xl lg:text-8xl font-light tracking-tight mb-8">
+                    Let's <span class="italic text-amber glow-amber">connect</span>.
+                </h2>
+                <p class="text-chalk-dim text-xl leading-relaxed max-w-2xl mx-auto mb-12">
                     Whether you want to talk about mathematics education, ed-tech, or just say hello — I'd love to hear from you.
                 </p>
-                <div class="flex flex-col sm:flex-row gap-6 justify-center">
-                    <a class="bg-academic-blue text-white px-12 py-5 font-bold uppercase text-xs tracking-widest hover:bg-academic-green transition-all shadow-lg" href="mailto:hello@benfarren.co.uk">
-                        Send an Email
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="mailto:hello@benfarren.co.uk" class="group relative px-10 py-4 overflow-hidden bg-amber">
+                        <span class="absolute inset-0 bg-chalk transition-transform duration-300 translate-y-full group-hover:translate-y-0"></span>
+                        <span class="relative font-mono text-xs uppercase tracking-widest text-noir font-medium group-hover:text-noir transition-colors">
+                            Send an Email
+                        </span>
                     </a>
-                    <a class="border border-slate-200 px-12 py-5 font-bold uppercase text-xs tracking-widest hover:bg-slate-50 transition-all text-slate-600" href="https://www.linkedin.com/in/ben-farren-39174797/" target="_blank">
-                        Connect on LinkedIn
+                    <a href="https://www.linkedin.com/in/ben-farren-39174797/" target="_blank" class="group relative px-10 py-4 overflow-hidden border border-chalk/20 hover:border-chalk/40 transition-colors">
+                        <span class="relative font-mono text-xs uppercase tracking-widest text-chalk-dim group-hover:text-chalk transition-colors">
+                            Connect on LinkedIn
+                        </span>
                     </a>
                 </div>
             </div>
@@ -415,31 +715,72 @@
     </main>
 
     <!-- Footer -->
-    <footer class="border-t border-slate-200 bg-white px-6 lg:px-16 py-12 flex flex-col md:flex-row justify-between items-center gap-8">
-        <div class="flex items-center gap-4">
-            <span class="font-serif font-bold text-xl text-slate-900">BF</span>
-            <span class="font-serif text-sm text-slate-500 italic">Director of Mathematics</span>
-        </div>
-        <div class="flex gap-12 font-mono text-[10px] uppercase tracking-widest text-slate-400">
-            <span>&copy; 2025 Ben Farren</span>
-        </div>
-        <div class="flex gap-4">
-            <a class="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:border-academic-green hover:text-academic-green transition-colors" href="https://x.com/bfarren94" target="_blank" aria-label="X (Twitter)">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                </svg>
-            </a>
-            <a class="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:border-academic-green hover:text-academic-green transition-colors" href="https://www.linkedin.com/in/ben-farren-39174797/" target="_blank" aria-label="LinkedIn">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
-                </svg>
-            </a>
-            <a class="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:border-academic-green hover:text-academic-green transition-colors" href="https://github.com/bencircadian" target="_blank" aria-label="GitHub">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                </svg>
-            </a>
+    <footer class="border-t border-chalk/5 px-6 lg:px-12 py-12">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+            <div class="flex items-center gap-4">
+                <span class="font-display text-2xl font-bold">BF</span>
+                <span class="text-chalk-dim text-sm">Director of Mathematics</span>
+            </div>
+            <div class="font-mono text-xs text-chalk-dim uppercase tracking-widest">
+                &copy; 2025 Ben Farren
+            </div>
+            <div class="flex gap-4">
+                <a href="https://x.com/bfarren94" target="_blank" class="w-10 h-10 rounded-full border border-chalk/10 flex items-center justify-center text-chalk-dim hover:border-amber hover:text-amber transition-all" aria-label="X (Twitter)">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    </svg>
+                </a>
+                <a href="https://www.linkedin.com/in/ben-farren-39174797/" target="_blank" class="w-10 h-10 rounded-full border border-chalk/10 flex items-center justify-center text-chalk-dim hover:border-amber hover:text-amber transition-all" aria-label="LinkedIn">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                    </svg>
+                </a>
+                <a href="https://github.com/bencircadian" target="_blank" class="w-10 h-10 rounded-full border border-chalk/10 flex items-center justify-center text-chalk-dim hover:border-amber hover:text-amber transition-all" aria-label="GitHub">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                </a>
+            </div>
         </div>
     </footer>
+
+    <!-- Scroll reveal script -->
+    <script>
+        // Trigger load animations
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.animate-on-load').forEach(el => {
+                el.style.opacity = '1';
+            });
+        });
+
+        // Scroll reveal observer
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        });
+
+        document.querySelectorAll('.reveal').forEach(el => {
+            revealObserver.observe(el);
+        });
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    // Close mobile menu if open
+                    document.getElementById('mobile-menu')?.classList.add('hidden');
+                }
+            });
+        });
+    </script>
 </body>
 </html>

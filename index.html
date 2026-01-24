@@ -43,6 +43,12 @@
                         "amber-dim": "#d97706",
                         "teal": "#14b8a6",
                         "violet": "#8b5cf6",
+                        "engram-blue": "#1E3A5F",
+                        "engram-amber": "#C17F24",
+                        "engram-paper": "#FAF9F7",
+                        "divvy-green": "#00DC82",
+                        "divvy-dark": "#0D2E1A",
+                        "divvy-bg": "#061A10",
                     },
                     fontFamily: {
                         "display": ["Lora", "Georgia", "serif"],
@@ -402,7 +408,7 @@
                                     <span class="font-mono text-xs text-chalk-dim uppercase tracking-widest">engram.study</span>
                                 </div>
                                 <h3 class="font-display text-4xl lg:text-5xl font-light mb-6 tracking-tight">
-                                    <span class="italic text-violet">Engram</span>
+                                    <span class="italic text-engram-blue">Engram</span>
                                 </h3>
                                 <div class="space-y-8">
                                     <div>
@@ -418,10 +424,10 @@
                                         </p>
                                     </div>
                                     <div class="flex flex-wrap gap-2">
-                                        <span class="px-3 py-1.5 bg-violet/10 border border-violet/20 font-mono text-xs text-violet">Spaced Repetition</span>
-                                        <span class="px-3 py-1.5 bg-violet/10 border border-violet/20 font-mono text-xs text-violet">AI Questions</span>
-                                        <span class="px-3 py-1.5 bg-violet/10 border border-violet/20 font-mono text-xs text-violet">DNA Builder</span>
-                                        <span class="px-3 py-1.5 bg-violet/10 border border-violet/20 font-mono text-xs text-violet">Planning Tools</span>
+                                        <span class="px-3 py-1.5 bg-engram-blue/10 border border-engram-blue/20 font-mono text-xs text-engram-blue">Spaced Repetition</span>
+                                        <span class="px-3 py-1.5 bg-engram-blue/10 border border-engram-blue/20 font-mono text-xs text-engram-blue">AI Questions</span>
+                                        <span class="px-3 py-1.5 bg-engram-amber/10 border border-engram-amber/20 font-mono text-xs text-engram-amber">DNA Builder</span>
+                                        <span class="px-3 py-1.5 bg-engram-amber/10 border border-engram-amber/20 font-mono text-xs text-engram-amber">Planning Tools</span>
                                     </div>
                                     <a href="https://engram.study" target="_blank" class="group inline-flex items-center gap-3 font-mono text-sm uppercase tracking-widest text-amber hover:text-chalk transition-colors">
                                         Visit engram.study
@@ -429,44 +435,40 @@
                                     </a>
                                 </div>
                             </div>
-                            <div class="bg-noir-lighter p-12 flex items-center justify-center relative">
-                                <div class="absolute inset-0 geo-pattern opacity-30"></div>
-                                <!-- Retention heatmap -->
-                                <div class="relative w-full max-w-xs">
-                                    <div class="grid grid-cols-7 gap-1.5">
-                                        <div class="aspect-square bg-violet opacity-10 rounded-sm"></div>
-                                        <div class="aspect-square bg-violet opacity-20 rounded-sm"></div>
-                                        <div class="aspect-square bg-violet opacity-40 rounded-sm"></div>
-                                        <div class="aspect-square bg-violet opacity-10 rounded-sm"></div>
-                                        <div class="aspect-square bg-violet opacity-5 rounded-sm"></div>
-                                        <div class="aspect-square bg-violet opacity-30 rounded-sm"></div>
-                                        <div class="aspect-square bg-violet opacity-60 rounded-sm"></div>
-                                        <div class="aspect-square bg-violet opacity-40 rounded-sm"></div>
-                                        <div class="aspect-square bg-violet opacity-80 rounded-sm"></div>
-                                        <div class="aspect-square bg-violet opacity-100 rounded-sm"></div>
-                                        <div class="aspect-square bg-violet opacity-90 rounded-sm"></div>
-                                        <div class="aspect-square bg-violet opacity-40 rounded-sm"></div>
-                                        <div class="aspect-square bg-violet opacity-20 rounded-sm"></div>
-                                        <div class="aspect-square bg-violet opacity-10 rounded-sm"></div>
-                                        <div class="aspect-square bg-violet opacity-10 rounded-sm"></div>
-                                        <div class="aspect-square bg-violet opacity-30 rounded-sm"></div>
-                                        <div class="aspect-square bg-violet opacity-50 rounded-sm"></div>
-                                        <div class="aspect-square bg-violet opacity-60 rounded-sm"></div>
-                                        <div class="aspect-square bg-violet opacity-20 rounded-sm"></div>
-                                        <div class="aspect-square bg-violet opacity-5 rounded-sm"></div>
-                                        <div class="aspect-square bg-violet opacity-10 rounded-sm"></div>
-                                        <div class="aspect-square bg-violet opacity-30 rounded-sm"></div>
-                                        <div class="aspect-square bg-violet opacity-50 rounded-sm"></div>
-                                        <div class="aspect-square bg-violet opacity-70 rounded-sm"></div>
-                                        <div class="aspect-square bg-violet opacity-80 rounded-sm"></div>
-                                        <div class="aspect-square bg-violet opacity-40 rounded-sm"></div>
-                                        <div class="aspect-square bg-violet opacity-15 rounded-sm"></div>
-                                        <div class="aspect-square bg-violet opacity-20 rounded-sm"></div>
+                            <div class="bg-engram-paper p-12 flex items-center justify-center relative">
+                                <!-- Paper texture lines -->
+                                <div class="absolute inset-0 opacity-30" style="background-image: repeating-linear-gradient(transparent, transparent 23px, #E5E2DB 23px, #E5E2DB 24px);"></div>
+                                <!-- Engram card mockup -->
+                                <div class="relative w-full max-w-sm">
+                                    <!-- Logo -->
+                                    <div class="flex items-center gap-3 mb-6">
+                                        <div class="flex flex-col gap-1">
+                                            <div class="w-6 h-1.5 bg-engram-blue rounded-full"></div>
+                                            <div class="w-6 h-1.5 bg-engram-blue rounded-full"></div>
+                                            <div class="flex items-center gap-0.5">
+                                                <div class="w-4 h-1.5 bg-engram-blue rounded-full"></div>
+                                                <div class="w-1.5 h-1.5 bg-engram-amber rounded-full"></div>
+                                            </div>
+                                        </div>
+                                        <span class="font-body font-semibold text-engram-blue text-lg tracking-tight">engram</span>
                                     </div>
-                                    <div class="mt-8 flex items-center justify-center gap-4">
-                                        <span class="font-mono text-[9px] text-chalk-dim uppercase tracking-widest">Retention</span>
-                                        <div class="h-1.5 w-20 bg-gradient-to-r from-violet/10 to-violet rounded-full"></div>
+                                    <!-- Question card -->
+                                    <div class="bg-white rounded-lg shadow-lg border border-gray-200/50 p-5">
+                                        <div class="flex items-center justify-between mb-4">
+                                            <span class="px-2 py-0.5 bg-engram-blue/10 text-engram-blue font-mono text-[10px] rounded">Q3</span>
+                                            <span class="text-gray-400 font-mono text-[10px]">Algebra</span>
+                                        </div>
+                                        <p class="text-gray-800 font-body text-sm mb-6 leading-relaxed">Solve for x: 3x + 7 = 22</p>
+                                        <!-- Rating buttons -->
+                                        <div class="flex gap-2">
+                                            <button class="flex-1 py-2 rounded text-[10px] font-medium bg-red-500/10 text-red-600">Nope</button>
+                                            <button class="flex-1 py-2 rounded text-[10px] font-medium bg-orange-500/10 text-orange-600">Hard</button>
+                                            <button class="flex-1 py-2 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-600">Good</button>
+                                            <button class="flex-1 py-2 rounded text-[10px] font-medium bg-engram-blue/10 text-engram-blue">Easy</button>
+                                        </div>
                                     </div>
+                                    <!-- Tagline -->
+                                    <p class="text-center mt-6 font-display italic text-engram-blue/60 text-sm">Revision that actually sticks</p>
                                 </div>
                             </div>
                         </div>
@@ -475,27 +477,28 @@
                     <!-- Project 2: Engram Planner -->
                     <article class="project-card bg-noir-light border border-chalk/5 overflow-hidden reveal">
                         <div class="grid lg:grid-cols-2">
-                            <div class="bg-noir-lighter p-12 flex items-center justify-center relative order-2 lg:order-1">
-                                <div class="absolute inset-0 diagonal-lines opacity-20"></div>
+                            <div class="bg-engram-paper p-12 flex items-center justify-center relative order-2 lg:order-1">
+                                <!-- Paper texture lines -->
+                                <div class="absolute inset-0 opacity-30" style="background-image: repeating-linear-gradient(transparent, transparent 23px, #E5E2DB 23px, #E5E2DB 24px);"></div>
                                 <!-- Planner UI mockup -->
                                 <div class="relative w-full max-w-sm">
-                                    <div class="bg-chalk rounded-xl shadow-2xl p-6 space-y-5 transform rotate-1">
+                                    <div class="bg-white rounded-lg shadow-xl border border-gray-200/50 p-5 space-y-4 transform rotate-1">
                                         <div class="flex items-center justify-between">
                                             <div class="flex gap-1.5">
-                                                <span class="w-2.5 h-2.5 rounded-full bg-violet"></span>
-                                                <span class="w-2.5 h-2.5 rounded-full bg-chalk-dim/30"></span>
-                                                <span class="w-2.5 h-2.5 rounded-full bg-chalk-dim/30"></span>
+                                                <span class="w-2.5 h-2.5 rounded-full bg-engram-blue"></span>
+                                                <span class="w-2.5 h-2.5 rounded-full bg-gray-200"></span>
+                                                <span class="w-2.5 h-2.5 rounded-full bg-gray-200"></span>
                                             </div>
-                                            <span class="font-mono text-[10px] text-noir/40">Skip</span>
+                                            <span class="font-mono text-[10px] text-gray-400">Skip</span>
                                         </div>
                                         <div class="text-center py-4">
-                                            <div class="w-12 h-12 mx-auto mb-4 rounded-xl bg-violet/10 flex items-center justify-center">
-                                                <span class="material-symbols-outlined text-2xl text-violet">calendar_month</span>
+                                            <div class="w-12 h-12 mx-auto mb-4 rounded-xl bg-engram-blue/10 flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-2xl text-engram-blue">calendar_month</span>
                                             </div>
-                                            <h4 class="font-body font-semibold text-noir text-lg">Welcome to Planner</h4>
-                                            <p class="text-noir/50 text-sm mt-2">Let's set up your timetable.</p>
+                                            <h4 class="font-body font-semibold text-gray-800 text-lg">Welcome to Planner</h4>
+                                            <p class="text-gray-500 text-sm mt-2">Let's set up your timetable.</p>
                                         </div>
-                                        <button class="w-full bg-violet text-chalk py-3 rounded-lg font-medium text-sm">
+                                        <button class="w-full bg-engram-blue text-white py-3 rounded-lg font-medium text-sm">
                                             Get Started
                                         </button>
                                     </div>
@@ -508,7 +511,7 @@
                                     <span class="font-mono text-xs text-chalk-dim uppercase tracking-widest">planner.engram.study</span>
                                 </div>
                                 <h3 class="font-display text-4xl lg:text-5xl font-light mb-6 tracking-tight">
-                                    Engram<br/><span class="italic text-violet">Planner</span>
+                                    Engram<br/><span class="italic text-engram-blue">Planner</span>
                                 </h3>
                                 <div class="space-y-8">
                                     <div>
@@ -524,13 +527,13 @@
                                         </p>
                                     </div>
                                     <div class="flex flex-wrap gap-2">
-                                        <span class="px-3 py-1.5 bg-violet/10 border border-violet/20 font-mono text-xs text-violet">Resource Linking</span>
-                                        <span class="px-3 py-1.5 bg-violet/10 border border-violet/20 font-mono text-xs text-violet">Task Planner</span>
-                                        <span class="px-3 py-1.5 bg-violet/10 border border-violet/20 font-mono text-xs text-violet">Cloud Sync</span>
+                                        <span class="px-3 py-1.5 bg-engram-blue/10 border border-engram-blue/20 font-mono text-xs text-engram-blue">Resource Linking</span>
+                                        <span class="px-3 py-1.5 bg-engram-blue/10 border border-engram-blue/20 font-mono text-xs text-engram-blue">Task Planner</span>
+                                        <span class="px-3 py-1.5 bg-engram-amber/10 border border-engram-amber/20 font-mono text-xs text-engram-amber">Cloud Sync</span>
                                     </div>
                                     <span class="inline-flex items-center gap-3 font-mono text-sm uppercase tracking-widest text-chalk-dim">
                                         Currently in testing
-                                        <span class="w-2 h-2 bg-violet rounded-full animate-pulse-slow"></span>
+                                        <span class="w-2 h-2 bg-engram-amber rounded-full animate-pulse-slow"></span>
                                     </span>
                                 </div>
                             </div>
@@ -547,7 +550,7 @@
                                     <span class="font-mono text-xs text-chalk-dim uppercase tracking-widest">divvyapp.co.uk</span>
                                 </div>
                                 <h3 class="font-display text-4xl lg:text-5xl font-light mb-6 tracking-tight">
-                                    <span class="italic text-teal">Divvy</span>
+                                    <span class="italic text-divvy-green">Divvy</span>
                                 </h3>
                                 <div class="space-y-8">
                                     <div>
@@ -563,9 +566,9 @@
                                         </p>
                                     </div>
                                     <div class="flex flex-wrap gap-2">
-                                        <span class="px-3 py-1.5 bg-teal/10 border border-teal/20 font-mono text-xs text-teal">Task Logging</span>
-                                        <span class="px-3 py-1.5 bg-teal/10 border border-teal/20 font-mono text-xs text-teal">Fair Tracking</span>
-                                        <span class="px-3 py-1.5 bg-teal/10 border border-teal/20 font-mono text-xs text-teal">Visual Stats</span>
+                                        <span class="px-3 py-1.5 bg-divvy-green/10 border border-divvy-green/20 font-mono text-xs text-divvy-green">Task Logging</span>
+                                        <span class="px-3 py-1.5 bg-divvy-green/10 border border-divvy-green/20 font-mono text-xs text-divvy-green">Leaderboard</span>
+                                        <span class="px-3 py-1.5 bg-divvy-green/10 border border-divvy-green/20 font-mono text-xs text-divvy-green">Gamification</span>
                                     </div>
                                     <a href="https://www.divvyapp.co.uk" target="_blank" class="group inline-flex items-center gap-3 font-mono text-sm uppercase tracking-widest text-amber hover:text-chalk transition-colors">
                                         Visit Divvy
@@ -573,25 +576,61 @@
                                     </a>
                                 </div>
                             </div>
-                            <div class="bg-noir-lighter p-12 flex items-center justify-center relative">
-                                <div class="absolute inset-0 geo-pattern opacity-20"></div>
-                                <div class="relative text-center">
-                                    <!-- Divvy branding -->
-                                    <div class="inline-flex items-center gap-3 mb-8">
-                                        <div class="w-16 h-16 bg-teal rounded-2xl flex items-center justify-center shadow-lg shadow-teal/20">
-                                            <span class="text-chalk text-3xl font-display font-bold">d</span>
+                            <div class="bg-divvy-bg p-12 flex items-center justify-center relative">
+                                <!-- Subtle glow -->
+                                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-divvy-green/10 rounded-full blur-3xl"></div>
+                                <div class="relative w-full max-w-xs">
+                                    <!-- Divvy logo and branding -->
+                                    <div class="text-center mb-6">
+                                        <div class="inline-flex items-center gap-2">
+                                            <div class="w-12 h-12 bg-gradient-to-br from-divvy-green to-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-divvy-green/30">
+                                                <span class="text-white text-2xl font-body font-bold">d</span>
+                                            </div>
+                                            <span class="text-4xl font-body font-semibold text-white tracking-tight">ivvy</span>
                                         </div>
-                                        <span class="text-5xl font-body font-semibold text-chalk">ivvy</span>
+                                        <p class="text-white/50 font-display italic text-sm mt-3">Keep the peace, share the work</p>
                                     </div>
-                                    <p class="text-chalk-dim font-display italic text-xl mb-8">Keep the peace, share the work</p>
-                                    <div class="flex justify-center gap-4">
-                                        <div class="bg-noir-light rounded-xl p-5 w-24 border border-chalk/5">
-                                            <span class="material-symbols-outlined text-teal text-2xl mb-2 block">cleaning_services</span>
-                                            <div class="font-mono text-[9px] text-chalk-dim uppercase tracking-wider">Logged</div>
+                                    <!-- Stats mockup card -->
+                                    <div class="bg-divvy-dark rounded-2xl border border-divvy-green/10 p-5 shadow-xl">
+                                        <div class="flex items-center justify-between mb-4">
+                                            <span class="text-white/70 font-mono text-[10px] uppercase tracking-wider">This Week</span>
+                                            <span class="px-2 py-0.5 bg-divvy-green/20 text-divvy-green font-mono text-[10px] rounded-full">+12%</span>
                                         </div>
-                                        <div class="bg-noir-light rounded-xl p-5 w-24 border border-chalk/5">
-                                            <span class="material-symbols-outlined text-teal text-2xl mb-2 block">handshake</span>
-                                            <div class="font-mono text-[9px] text-chalk-dim uppercase tracking-wider">Shared</div>
+                                        <!-- Progress bars -->
+                                        <div class="space-y-3">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 rounded-full bg-orange-500/20 flex items-center justify-center">
+                                                    <span class="material-symbols-outlined text-orange-400 text-sm">kitchen</span>
+                                                </div>
+                                                <div class="flex-1">
+                                                    <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+                                                        <div class="h-full w-3/4 bg-gradient-to-r from-divvy-green to-emerald-400 rounded-full"></div>
+                                                    </div>
+                                                </div>
+                                                <span class="text-white/50 font-mono text-[10px]">8</span>
+                                            </div>
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 rounded-full bg-sky-500/20 flex items-center justify-center">
+                                                    <span class="material-symbols-outlined text-sky-400 text-sm">bathroom</span>
+                                                </div>
+                                                <div class="flex-1">
+                                                    <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+                                                        <div class="h-full w-1/2 bg-gradient-to-r from-divvy-green to-emerald-400 rounded-full"></div>
+                                                    </div>
+                                                </div>
+                                                <span class="text-white/50 font-mono text-[10px]">5</span>
+                                            </div>
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
+                                                    <span class="material-symbols-outlined text-purple-400 text-sm">weekend</span>
+                                                </div>
+                                                <div class="flex-1">
+                                                    <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+                                                        <div class="h-full w-1/3 bg-gradient-to-r from-divvy-green to-emerald-400 rounded-full"></div>
+                                                    </div>
+                                                </div>
+                                                <span class="text-white/50 font-mono text-[10px]">3</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

@@ -743,6 +743,160 @@
         return { right, total, pct: total > 0 ? Math.round((right / total) * 100) : null, due };
       };
 
+      if (mode === "summary") {
+        const now = Date.now();
+        const testDate = new Date("2026-03-08T09:00:00").getTime();
+        const daysLeft = Math.max(0, Math.ceil((testDate - now) / 86400000));
+
+        const catBreakdown = CATEGORIES.map(cat => {
+          let studied = 0, newCount = 0, dueNow = 0, totalRight = 0, totalWrong = 0, mature = 0, avgStability = 0, stabCount = 0;
+          cat.cards.forEach(card => {
+            const key = cat.id + ":" + card.q.slice(0, 40);
+            const s = scores[key];
+            if (!s || !s._fsrs) { newCount++; dueNow++; }
+            else {
+              studied++;
+              totalRight += s.right; totalWrong += s.wrong;
+              avgStability += s.S; stabCount++;
+              if (s.S >= 21) mature++;
+              if (s.due <= now) dueNow++;
+            }
+          });
+          const acc = (totalRight + totalWrong) > 0 ? Math.round((totalRight / (totalRight + totalWrong)) * 100) : null;
+          return { cat, studied, newCount, dueNow, totalRight, totalWrong, acc, mature, avgStab: stabCount > 0 ? avgStability / stabCount : 0, total: cat.cards.length };
+        });
+
+        const allStudied = catBreakdown.reduce((s, c) => s + c.studied, 0);
+        const allMature = catBreakdown.reduce((s, c) => s + c.mature, 0);
+        const allDue = catBreakdown.reduce((s, c) => s + c.dueNow, 0);
+        const allNew = catBreakdown.reduce((s, c) => s + c.newCount, 0);
+        const readiness = totalCards > 0 ? Math.round((allMature / totalCards) * 100) : 0;
+
+        const forecast = [];
+        for (let d = 0; d < Math.min(daysLeft, 21); d++) {
+          const dayStart = now + d * 86400000;
+          const dayEnd = dayStart + 86400000;
+          let dueCount = 0;
+          CATEGORIES.forEach(cat => cat.cards.forEach(card => {
+            const key = cat.id + ":" + card.q.slice(0, 40);
+            const s = scores[key];
+            if (!s || !s._fsrs) { if (d === 0) dueCount++; }
+            else if (s.due >= dayStart && s.due < dayEnd) dueCount++;
+            else if (d === 0 && s.due < now) dueCount++;
+          }));
+          forecast.push(dueCount);
+        }
+        const maxForecast = Math.max(...forecast, 1);
+
+        const weakTopics = catBreakdown.filter(c => c.acc !== null && c.acc < 75).sort((a, b) => (a.acc || 0) - (b.acc || 0));
+
+        return (
+          <div style={{ minHeight: "100vh", background: "#0a0a0f", color: "#e8e6e3" }}>
+            <div style={{ maxWidth: 680, margin: "0 auto", padding: "32px 24px 60px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+                <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: "#d0d0e0" }}>Study Summary</h1>
+                <button onClick={() => setMode("menu")}
+                  style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#8a8a9a", padding: "6px 16px", cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>
+                  Back
+                </button>
+              </div>
+
+              {/* Readiness + key stats */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 24 }}>
+                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 16, textAlign: "center" }}>
+                  <div style={{ fontSize: 32, fontWeight: 700, color: readiness >= 80 ? "#34d399" : readiness >= 50 ? "#fbbf24" : "#f87171" }}>{readiness}%</div>
+                  <div style={{ fontSize: 11, color: "#6b6b7b", marginTop: 4, fontFamily: "'DM Mono', monospace" }}>Test Ready</div>
+                </div>
+                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 16, textAlign: "center" }}>
+                  <div style={{ fontSize: 32, fontWeight: 700, color: "#f97316" }}>{allDue}</div>
+                  <div style={{ fontSize: 11, color: "#6b6b7b", marginTop: 4, fontFamily: "'DM Mono', monospace" }}>Due Now</div>
+                </div>
+                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 16, textAlign: "center" }}>
+                  <div style={{ fontSize: 32, fontWeight: 700, color: daysLeft <= 7 ? "#f87171" : "#60a5fa" }}>{daysLeft}</div>
+                  <div style={{ fontSize: 11, color: "#6b6b7b", marginTop: 4, fontFamily: "'DM Mono', monospace" }}>Days Left</div>
+                </div>
+              </div>
+
+              {/* Card breakdown bar */}
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#8a8a9a", marginBottom: 8 }}>Card Status</div>
+                <div style={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden", background: "rgba(255,255,255,0.06)" }}>
+                  {allMature > 0 && <div style={{ width: (allMature / totalCards * 100) + "%", background: "#34d399" }} title={allMature + " mature"} />}
+                  {(allStudied - allMature) > 0 && <div style={{ width: ((allStudied - allMature) / totalCards * 100) + "%", background: "#fbbf24" }} title={(allStudied - allMature) + " learning"} />}
+                  {allNew > 0 && <div style={{ width: (allNew / totalCards * 100) + "%", background: "#444" }} title={allNew + " new"} />}
+                </div>
+                <div style={{ display: "flex", gap: 16, marginTop: 6, fontSize: 11, fontFamily: "'DM Mono', monospace", color: "#6b6b7b" }}>
+                  <span><span style={{ color: "#34d399" }}>{allMature}</span> mature</span>
+                  <span><span style={{ color: "#fbbf24" }}>{allStudied - allMature}</span> learning</span>
+                  <span><span style={{ color: "#666" }}>{allNew}</span> new</span>
+                </div>
+              </div>
+
+              {/* Review forecast */}
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#8a8a9a", marginBottom: 8 }}>Review Forecast (next {forecast.length} days)</div>
+                <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 60 }}>
+                  {forecast.map((count, i) => (
+                    <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                      <div style={{
+                        width: "100%", minHeight: 2,
+                        height: Math.max(2, (count / maxForecast) * 48),
+                        background: i === 0 ? "#f97316" : "rgba(99,102,241,0.5)",
+                        borderRadius: "2px 2px 0 0",
+                      }} title={count + " cards"} />
+                      {(i === 0 || i === forecast.length - 1 || i === 6) && (
+                        <div style={{ fontSize: 9, color: "#555", marginTop: 2, fontFamily: "'DM Mono', monospace" }}>
+                          {i === 0 ? "today" : "+" + i + "d"}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Weak topics */}
+              {weakTopics.length > 0 && (
+                <div style={{ marginBottom: 24 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#f87171", marginBottom: 8 }}>Weak Topics (below 75%)</div>
+                  {weakTopics.map(c => (
+                    <div key={c.cat.id} onClick={() => { setSelectedCats([c.cat.id]); startSession([c.cat.id]); }}
+                      style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", margin: "4px 0", background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.1)", borderRadius: 8, cursor: "pointer" }}>
+                      <div style={{ width: 6, height: 28, borderRadius: 3, background: c.cat.color, flexShrink: 0 }} />
+                      <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "#d0d0e0" }}>{c.cat.name}</div>
+                      <span style={{ fontSize: 12, color: "#f87171", fontWeight: 700, fontFamily: "'DM Mono', monospace" }}>{c.acc}%</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Per-topic breakdown */}
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#8a8a9a", marginBottom: 8 }}>All Topics</div>
+                {catBreakdown.map(c => (
+                  <div key={c.cat.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", margin: "4px 0", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: 8 }}>
+                    <div style={{ width: 6, height: 28, borderRadius: 3, background: c.cat.color, flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#d0d0e0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.cat.name}</div>
+                      <div style={{ fontSize: 11, color: "#555", fontFamily: "'DM Mono', monospace" }}>
+                        {c.studied}/{c.total} studied
+                        {c.dueNow > 0 && <span style={{ color: "#f97316" }}> \u00b7 {c.dueNow} due</span>}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      {c.acc !== null ? (
+                        <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "'DM Mono', monospace", color: c.acc >= 80 ? "#34d399" : c.acc >= 60 ? "#fbbf24" : "#f87171" }}>{c.acc}%</span>
+                      ) : (
+                        <span style={{ fontSize: 11, color: "#444", fontFamily: "'DM Mono', monospace" }}>--</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
       if (mode === "menu") {
         return (
           <div style={{ minHeight: "100vh", background: "#0a0a0f", color: "#e8e6e3" }}>
@@ -769,6 +923,10 @@
                     setSelectedCats(ids); startSession(ids);
                   }} style={{ padding: "10px 20px", background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, color: "#f87171", fontWeight: 700, cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>
                     Weak Topics Only
+                  </button>
+                  <button onClick={() => setMode("summary")}
+                    style={{ padding: "10px 20px", background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 10, color: "#818cf8", fontWeight: 700, cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>
+                    Summary
                   </button>
                 </div>
               </div>

@@ -563,11 +563,15 @@
       useEffect(() => {
         const handleKey = (e) => {
           if (mode !== "study") return;
-          if (e.code === "Space") { e.preventDefault(); setFlipped(f => !f); }
+          if (e.code === "Space") {
+            e.preventDefault();
+            if (!flipped) { setFlipped(true); } else { markCard(true); }
+          }
+          if (flipped && (e.key === "n" || e.key === "N")) { markCard(false); }
         };
         window.addEventListener("keydown", handleKey);
         return () => window.removeEventListener("keydown", handleKey);
-      }, [mode]);
+      }, [mode, flipped, cards, idx, scores, sessionResults]);
 
       const totalCards = CATEGORIES.reduce((s, c) => s + c.cards.length, 0);
       const totalRight = Object.values(scores).reduce((s, v) => s + v.right, 0);

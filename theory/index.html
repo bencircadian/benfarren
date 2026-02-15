@@ -449,7 +449,7 @@
       const MAX_S = (params && params.maxStability) || 36500;
 
       const retrievability = (t, S) => Math.pow(1 + FACTOR * (t / S), DECAY);
-      const nextInterval = (R, S) => Math.max(1, (S / FACTOR) * (Math.pow(R, 1 / DECAY) - 1));
+      const nextInterval = (R, S) => Math.max(1, 0.4 * (S / FACTOR) * (Math.pow(R, 1 / DECAY) - 1));
       const initialStability = (G) => w[G - 1];
       const initialDifficulty = (G) => clamp(w[4] - Math.exp(w[5] * (G - 1)) + 1, 1, 10);
       const nextDifficulty = (D, G) => {

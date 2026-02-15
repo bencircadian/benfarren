@@ -879,7 +879,7 @@
                       <div style={{ fontSize: 13, fontWeight: 600, color: "#d0d0e0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.cat.name}</div>
                       <div style={{ fontSize: 11, color: "#555", fontFamily: "'DM Mono', monospace" }}>
                         {c.studied}/{c.total} studied
-                        {c.dueNow > 0 && <span style={{ color: "#f97316" }}> \u00b7 {c.dueNow} due</span>}
+                        {c.dueNow > 0 && <span style={{ color: "#f97316" }}> | {c.dueNow} due</span>}
                       </div>
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
@@ -908,8 +908,8 @@
                 </div>
                 <p style={{ color: "#8a8a9a", margin: "4px 0 16px", fontSize: 14, fontFamily: "'DM Mono', monospace" }}>
                   {totalCards} cards across {CATEGORIES.length} topics
-                  {totalAttempts > 0 && (" \u00b7 " + Math.round((totalRight / totalAttempts) * 100) + "% accuracy")}
-                  {" \u00b7 "}{CATEGORIES.reduce((s, c) => s + getCatStats(c.id).due, 0)} due for review
+                  {totalAttempts > 0 && (" | " + Math.round((totalRight / totalAttempts) * 100) + "% accuracy")}
+                  {" | "}{CATEGORIES.reduce((s, c) => s + getCatStats(c.id).due, 0)} due for review
                 </p>
 
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -946,8 +946,8 @@
                       <div style={{ fontSize: 15, fontWeight: 600, color: "#d0d0e0" }}>{cat.name}</div>
                       <div style={{ fontSize: 12, color: "#6b6b7b", marginTop: 2, fontFamily: "'DM Mono', monospace" }}>
                         {cat.cards.length} cards
-                        {stats.pct !== null && (" \u00b7 " + stats.pct + "%")}
-                        {stats.due > 0 && <span style={{ color: "#f97316" }}> \u00b7 {stats.due} due</span>}
+                        {stats.pct !== null && (" | " + stats.pct + "%")}
+                        {stats.due > 0 && <span style={{ color: "#f97316" }}> | {stats.due} due</span>}
                       </div>
                     </div>
                     {stats.pct !== null && (

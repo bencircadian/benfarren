@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Theory Test Flashcards — Ben Farren</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <meta name="description" content="UK driving theory test flashcards — stopping distances, road signs, motorway rules and more." />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0a0a0f; color: #e8e6e3; font-family: 'DM Sans', 'Segoe UI', system-ui, sans-serif; }
+    #root { min-height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect, useCallback } = React;
+
+    const CATEGORIES = [
+      {
+        id: "stopping",
+        name: "Stopping Distances",
+        color: "#ef4444",
+        cards: [
+          { q: "What is the total stopping distance at 20 mph?", a: "12 metres (40 feet). Thinking: 6m + Braking: 6m." },
+          { q: "What is the total stopping distance at 30 mph?", a: "23 metres (75 feet). Thinking: 9m + Braking: 14m." },
+          { q: "What is the total stopping distance at 40 mph?", a: "36 metres (118 feet). Thinking: 12m + Braking: 24m." },
+          { q: "What is the total stopping distance at 50 mph?", a: "53 metres (175 feet). Thinking: 15m + Braking: 38m." },
+          { q: "What is the total stopping distance at 60 mph?", a: "73 metres (240 feet). Thinking: 18m + Braking: 55m." },
+          { q: "What is the total stopping distance at 70 mph?", a: "96 metres (315 feet). Thinking: 21m + Braking: 75m." },
+          { q: "What is the formula for stopping distance in feet?", a: "Speed \u00d7 intervals of 0.5, starting at 2 for 20 mph. So: 20\u00d72=40ft, 30\u00d72.5=75ft, 40\u00d73=120ft, 50\u00d73.5=175ft, 60\u00d74=240ft, 70\u00d74.5=315ft." },
+          { q: "What is the relationship between thinking distance and speed?", a: "Thinking distance in feet equals your speed in mph. E.g. at 40 mph, thinking distance = 40 feet (12m)." },
+          { q: "What happens to stopping distances in wet conditions?", a: "At least DOUBLE the stopping distance in wet conditions." },
+          { q: "What happens to stopping distances on ice?", a: "Up to TEN TIMES the normal stopping distance." },
+          { q: "What is the 2-second rule?", a: "In dry conditions, keep at least a 2-second gap between you and the vehicle in front. Use a fixed point and count 'Only a fool breaks the two-second rule'." },
+          { q: "What does the 2-second rule become in wet weather?", a: "At least a 4-second gap (double the dry weather gap)." },
+          { q: "What factors increase thinking distance?", a: "Tiredness, alcohol, drugs, distractions (e.g. mobile phone), illness, and stress." },
+          { q: "What factors increase braking distance?", a: "Wet/icy roads, worn tyres, worn brakes, speed, heavy vehicle load, and poor road surface." },
+          { q: "What is 'stopping distance' made up of?", a: "Thinking distance (reaction time) + Braking distance (time from applying brakes to stopping)." },
+        ]
+      },
+      {
+        id: "speed",
+        name: "Speed Limits",
+        color: "#f97316",
+        cards: [
+          { q: "What is the speed limit in a built-up area (with street lighting)?", a: "30 mph (20 mph in Wales and some English zones near schools)." },
+          { q: "What is the national speed limit on a single carriageway for cars?", a: "60 mph." },
+          { q: "What is the national speed limit on a dual carriageway for cars?", a: "70 mph." },
+          { q: "What is the national speed limit on a motorway for cars?", a: "70 mph." },
+          { q: "What is the speed limit on a single carriageway for a car towing a trailer?", a: "50 mph." },
+          { q: "What is the speed limit on a dual carriageway/motorway for a car towing a trailer?", a: "60 mph." },
+          { q: "How can you tell you're in a 30 mph zone without seeing a 30 sign?", a: "Street lighting (lamp posts) indicates a 30 mph limit unless signs show otherwise." },
+          { q: "What does the national speed limit sign look like?", a: "A white circular sign with a black diagonal stripe through it." },
+          { q: "What is a smart motorway?", a: "A motorway that uses technology to manage traffic flow by changing speed limits on overhead digital signs and opening/closing lanes." },
+          { q: "If an overhead gantry on a smart motorway shows 50 mph, what must you do?", a: "Obey it \u2014 the national speed limit no longer applies. The displayed limit is enforceable." },
+          { q: "What shape is a speed limit sign?", a: "Circular with a red border." },
+          { q: "What is an advisory speed limit sign?", a: "A rectangular sign showing a recommended maximum speed, often before bends. It is not legally enforced but strongly recommended." },
+        ]
+      },
+      {
+        id: "signs",
+        name: "Road Signs",
+        color: "#eab308",
+        cards: [
+          { q: "What shape are WARNING signs?", a: "Triangular (point at top) with a red border." },
+          { q: "What shape are signs giving ORDERS?", a: "Circular." },
+          { q: "What does a circular sign with a RED border mean?", a: "Prohibition \u2014 something you MUST NOT do (e.g. no entry, no overtaking, speed limit)." },
+          { q: "What does a circular sign with a BLUE background mean?", a: "Positive instruction \u2014 something you MUST do (e.g. turn left, minimum speed, keep left)." },
+          { q: "What shape are INFORMATION signs?", a: "Rectangular." },
+          { q: "What colour are motorway signs?", a: "Blue background with white text." },
+          { q: "What colour are primary route signs (A-roads)?", a: "Green background with white text." },
+          { q: "What colour are non-primary route signs (local)?", a: "White background with black text." },
+          { q: "What does a brown sign indicate?", a: "Tourist information or tourist attraction." },
+          { q: "What does a red triangle with nothing inside mean?", a: "Other danger ahead \u2014 a general warning that doesn't have a specific symbol." },
+          { q: "What does a round blue sign with a white bicycle mean?", a: "Route for pedal cycles only (mandatory cycle lane)." },
+          { q: "What does a red circle with a white horizontal bar mean?", a: "No entry for vehicular traffic." },
+          { q: "What does a red circle with two cars side by side mean?", a: "No overtaking." },
+          { q: "What do chevron signs (black and white arrows) indicate?", a: "Sharp change in direction of the road (sharp bend). Follow the direction of the arrows." },
+          { q: "What does a blue rectangle with a white 'P' mean?", a: "Parking permitted." },
+          { q: "What does a red triangle with an exclamation mark mean?", a: "Other danger \u2014 read the supplementary plate below for specific hazard." },
+        ]
+      },
+      {
+        id: "motorway",
+        name: "Motorway Rules",
+        color: "#22c55e",
+        cards: [
+          { q: "What is the minimum engine size allowed on a motorway?", a: "There is no minimum engine size \u2014 but the vehicle must be capable of maintaining motorway speeds. Learner drivers, pedestrians, cyclists, horse riders, and certain slow vehicles are banned." },
+          { q: "Who is NOT allowed on a motorway?", a: "Pedestrians, cyclists, horse riders, certain slow-moving vehicles, and learner drivers (unless with an approved instructor in a dual-control car)." },
+          { q: "What is the hard shoulder for?", a: "Emergencies only. Do not use it for stopping to rest, make phone calls, or check a map." },
+          { q: "What should you do if you break down on a motorway?", a: "Pull onto the hard shoulder (if available), switch on hazard lights, get out via the left door, stand behind the barrier, and use an emergency phone." },
+          { q: "Which lane should you normally drive in on a motorway?", a: "The left-hand lane (Lane 1). Use other lanes only for overtaking." },
+          { q: "Can you overtake on the left on a motorway?", a: "No \u2014 except in slow-moving traffic when your lane is moving faster, or when directed by signs." },
+          { q: "What do red 'X' signs above a motorway lane mean?", a: "The lane is CLOSED. You must not drive in it \u2014 move to an open lane." },
+          { q: "What should you do when joining a motorway from a slip road?", a: "Build up speed on the slip road to match motorway traffic, signal right, and merge when safe. Give way to traffic already on the motorway." },
+          { q: "What is the right-hand lane of a three-lane motorway for?", a: "Overtaking only. You should move back to the left when safe to do so." },
+          { q: "What vehicles cannot use the right-hand lane of a three-lane motorway?", a: "Any vehicle towing a trailer, and goods vehicles over 7.5 tonnes." },
+          { q: "What are amber flashing lights on a motorway sign warning you about?", a: "A hazard ahead \u2014 change lanes or slow down as the sign indicates." },
+          { q: "What is an Active Traffic Management (smart) motorway?", a: "A motorway where the hard shoulder can be opened as a running lane during busy times, and variable speed limits are used on overhead gantries." },
+          { q: "What should you do if you miss your motorway exit?", a: "Continue to the next exit. NEVER reverse or turn around on a motorway." },
+          { q: "What colour are motorway marker posts?", a: "Blue with arrows pointing to the nearest emergency phone." },
+        ]
+      },
+      {
+        id: "junctions",
+        name: "Junctions & Roundabouts",
+        color: "#06b6d4",
+        cards: [
+          { q: "At a roundabout, who has priority?", a: "Traffic already on the roundabout (coming from the RIGHT) has priority. Give way to them." },
+          { q: "When should you signal when leaving a roundabout?", a: "Signal left after you have passed the exit before the one you want to take." },
+          { q: "What lane should you use for turning left or going straight at a roundabout?", a: "The left lane (unless road markings indicate otherwise)." },
+          { q: "What lane should you use for turning right or going past the 12 o'clock position at a roundabout?", a: "The right lane (unless road markings indicate otherwise). Move to the left lane before your exit." },
+          { q: "At a crossroads with no markings or signs, who has priority?", a: "Nobody has automatic priority. Proceed with great caution and be prepared to give way." },
+          { q: "What does a 'STOP' sign require you to do?", a: "You MUST stop completely at the white line, even if the road appears clear. Octagonal shape." },
+          { q: "What does a 'GIVE WAY' sign require?", a: "Slow down and give way to traffic on the main road. You must stop if necessary but don't need to stop if the road is clear. Inverted triangle." },
+          { q: "What is a box junction?", a: "Yellow criss-cross lines. You MUST NOT enter unless your exit is clear, EXCEPT when turning right and only held up by oncoming traffic." },
+          { q: "What is a yellow box junction's exception rule?", a: "You CAN wait in a box junction if you are turning right and only prevented from doing so by oncoming traffic or vehicles also turning right." },
+        ]
+      },
+      {
+        id: "vulnerable",
+        name: "Vulnerable Road Users",
+        color: "#8b5cf6",
+        cards: [
+          { q: "How much space should you give a cyclist when overtaking?", a: "At least 1.5 metres at speeds up to 30 mph, and at least 2 metres at higher speeds. If you can't give this space, don't overtake." },
+          { q: "What should you do when passing a horse and rider?", a: "Slow down, give them plenty of room, and don't rev your engine or sound your horn \u2014 it could frighten the horse." },
+          { q: "What should you be especially careful of near schools?", a: "Children may run out into the road without looking. Slow down and watch for flashing amber lights near school zones." },
+          { q: "What does a flashing amber signal at a pelican crossing mean?", a: "Give way to pedestrians still on the crossing. If the crossing is clear, you may proceed." },
+          { q: "What is a toucan crossing?", a: "A crossing shared by pedestrians and cyclists. Both can cross together. There is no flashing amber phase." },
+          { q: "What is a puffin crossing?", a: "A crossing with sensors that detect pedestrians and only turn the traffic light green when the crossing is clear. There is no flashing amber phase." },
+          { q: "What is a pegasus crossing?", a: "A crossing designed for horse riders, in addition to pedestrians and cyclists." },
+          { q: "What does a school crossing patrol sign look like?", a: "Two amber flashing lights on a pole with a circular sign showing children." },
+          { q: "What should you do if a blind person is waiting at a crossing with a guide dog?", a: "Do not wave them across or sound your horn. They rely on listening to traffic flow." },
+          { q: "When must you stop at a zebra crossing?", a: "When a pedestrian has stepped onto the crossing. You should also be ready to stop if someone is waiting to cross." },
+          { q: "What should you watch for with parked ice cream vans?", a: "Children running out from behind them into the road." },
+          { q: "How should you treat elderly pedestrians?", a: "Be patient \u2014 they may need more time to cross the road and may not judge your speed accurately." },
+        ]
+      },
+      {
+        id: "vehicle",
+        name: "Vehicle Safety & Documents",
+        color: "#ec4899",
+        cards: [
+          { q: "What is the legal minimum tyre tread depth for cars?", a: "1.6 mm across the central three-quarters of the tyre and around the entire circumference." },
+          { q: "What is the penalty for driving with illegal tyres?", a: "Up to \u00a32,500 fine and 3 penalty points PER tyre." },
+          { q: "When does a car first need an MOT?", a: "When it is 3 years old (from the date of first registration)." },
+          { q: "What THREE documents must you have to drive legally?", a: "A valid driving licence, valid insurance, and a valid MOT certificate (if the car is 3+ years old). Road tax (VED) must also be paid." },
+          { q: "How do you check tyre tread using a 20p coin?", a: "Insert the coin into the tread groove. If the outer band of the coin is visible, the tread is below the legal limit of 1.6mm." },
+          { q: "What should you check before a long journey? (FLOWER)", a: "Fuel, Lights, Oil, Water, Electrics, Rubber (tyres)." },
+          { q: "What is the head restraint for?", a: "To reduce the risk of neck/whiplash injury in a rear-end collision. It should be adjusted so the rigid part is level with the top of your head." },
+          { q: "When must you use seatbelts?", a: "At all times when driving or as a passenger, unless you have a valid medical exemption." },
+          { q: "Who is responsible for seatbelts for passengers under 14?", a: "The DRIVER is responsible for ensuring children under 14 wear seatbelts or use appropriate child restraints." },
+          { q: "When must you use dipped headlights?", a: "At night on lit roads, in poor visibility (fog, heavy rain), and at dusk/dawn. Use dipped (not full beam) to avoid dazzling others." },
+          { q: "When should fog lights be used?", a: "Only when visibility is seriously reduced (generally below 100 metres). You MUST switch them off when visibility improves." },
+          { q: "What does the catalytic converter do?", a: "Reduces toxic exhaust emissions. It's part of the exhaust system." },
+          { q: "How often should you check your tyre pressure?", a: "At least once a week, and before long journeys. Check when tyres are COLD." },
+          { q: "What happens if your car bounces when you push down on the front wing?", a: "The shock absorbers are worn and need replacing." },
+          { q: "What is the legal eyesight requirement for driving?", a: "You must be able to read a standard number plate from 20 metres (about 5 car lengths) in daylight." },
+        ]
+      },
+      {
+        id: "firstaid",
+        name: "First Aid & Emergencies",
+        color: "#14b8a6",
+        cards: [
+          { q: "What does DR ABC stand for?", a: "Danger, Response, Airway, Breathing, Circulation (or CPR). The procedure to follow at an accident scene." },
+          { q: "If a casualty is unconscious but breathing normally, what should you do?", a: "Place them in the recovery position. Keep checking their airway and breathing." },
+          { q: "What is the rate for chest compressions in CPR?", a: "100\u2013120 compressions per minute, at a depth of about 5\u20136 cm." },
+          { q: "What is the CPR ratio of compressions to breaths?", a: "30 compressions to 2 rescue breaths." },
+          { q: "Should you remove a motorcyclist's helmet after an accident?", a: "Only if absolutely essential (e.g. they are not breathing). Otherwise, leave it on to avoid spinal injury." },
+          { q: "What should you do if a casualty is bleeding heavily?", a: "Apply firm pressure to the wound using a clean cloth. Raise the injured limb above heart level if possible. Call 999." },
+          { q: "Should you give food or drink to an accident casualty?", a: "NO. They may need surgery or anaesthetic, or they may have internal injuries." },
+          { q: "What should you do if someone has a burn?", a: "Cool the burn with clean, cool water for at least 10 minutes. Do not remove anything stuck to the burn. Do not pop blisters." },
+          { q: "What should you NOT do at an accident scene?", a: "Don't move injured people unless there is further danger (e.g. fire). Don't give them food or drink. Don't remove a motorcyclist's helmet unless absolutely essential." },
+          { q: "What should you do if a casualty is in shock?", a: "Keep them warm and comfortable, reassure them, and call emergency services. Do NOT give them anything to eat or drink." },
+          { q: "When must you stop at an accident scene?", a: "If you are involved in an accident that causes injury, damage to another vehicle/property, or injury to an animal (not a cat). You must stop and exchange details or report to police within 24 hours." },
+          { q: "What should you use your hazard warning lights for at an accident?", a: "To warn other traffic of the obstruction ahead." },
+          { q: "What should you do if your car catches fire in a tunnel?", a: "Drive it out of the tunnel if possible. If not, switch off the engine, leave the vehicle, use emergency phones, and follow emergency signs." },
+          { q: "What is an AED (Automated External Defibrillator)?", a: "A device that delivers an electric shock to restore normal heart rhythm during cardiac arrest. It gives voice instructions \u2014 anyone can use one." },
+          { q: "If someone has a cardiac arrest, what should you do?", a: "Call 999 immediately (use speakerphone). Start CPR (30 compressions, 2 breaths). Use an AED if available. Continue until help arrives." },
+        ]
+      },
+      {
+        id: "weather",
+        name: "Weather & Safety Margins",
+        color: "#0ea5e9",
+        cards: [
+          { q: "What lights should you use in fog?", a: "Dipped headlights AND fog lights if visibility is seriously reduced (below 100m). NEVER use full beam \u2014 it reflects off fog and reduces visibility." },
+          { q: "What must you do when fog clears?", a: "Switch off your fog lights. It's illegal to use them when visibility is not seriously reduced, as they can dazzle other drivers." },
+          { q: "What is aquaplaning?", a: "When a layer of water builds between the tyres and the road surface, causing loss of steering and braking control. Ease off the accelerator \u2014 don't brake suddenly." },
+          { q: "What should you do when driving in heavy rain?", a: "Use dipped headlights, slow down, double your following distance, and beware of spray from lorries reducing visibility." },
+          { q: "What should you do if you encounter a flooded road?", a: "Drive slowly through in first gear (or low gear). After passing through, test your brakes by pressing lightly." },
+          { q: "What should you do after driving through deep water?", a: "Test your brakes by pressing lightly while driving slowly. They may be less effective when wet." },
+          { q: "How should you drive on icy roads?", a: "Drive very slowly in the highest gear possible to avoid wheel spin. Brake gently, steer gently, and increase following distance by up to 10 times." },
+          { q: "What should you do in strong crosswinds?", a: "Keep both hands on the wheel, reduce speed, and be especially cautious on exposed roads, bridges, and when passing high-sided vehicles." },
+          { q: "What should you be aware of when driving in bright sunshine?", a: "Sun dazzle can be blinding. Use your sun visor, wear sunglasses, and slow down if visibility is affected." },
+          { q: "What does 'black ice' look like?", a: "It's invisible \u2014 the road looks wet but is actually frozen. Be particularly careful in shaded areas, bridges, and on cold mornings." },
+        ]
+      },
+      {
+        id: "attitude",
+        name: "Attitude & Alertness",
+        color: "#a855f7",
+        cards: [
+          { q: "What should you do if another driver is tailgating you?", a: "Gradually slow down and increase the gap in front of you. Do not brake suddenly or speed up. Let them overtake when safe." },
+          { q: "What should you do if you feel drowsy while driving?", a: "Stop in a safe place, drink two cups of strong coffee (caffeine), then take a short nap of around 15 minutes. Do NOT open a window or turn up the radio \u2014 these don't work." },
+          { q: "What is the legal drink-drive limit in England/Wales?", a: "80mg of alcohol per 100ml of blood. However, the safest option is to not drink any alcohol at all before driving." },
+          { q: "What is the legal drink-drive limit in Scotland?", a: "50mg of alcohol per 100ml of blood \u2014 lower than England/Wales." },
+          { q: "Can you use a hand-held mobile phone while driving?", a: "No \u2014 it is illegal to use a hand-held phone while driving, even when stopped at traffic lights. You can use a hands-free device but should avoid it where possible." },
+          { q: "What is the maximum penalty for using a mobile phone while driving?", a: "6 penalty points and a \u00a3200 fine. New drivers (within 2 years of passing) could have their licence revoked." },
+          { q: "What should you do before reversing?", a: "Check all around the vehicle, especially behind and in blind spots. Use mirrors and look over your shoulder. Watch for children." },
+          { q: "What is 'road rage' and how should you handle it?", a: "Aggressive behaviour by another driver. Stay calm, avoid eye contact, don't retaliate, lock your doors, and drive to a busy area or police station if threatened." },
+          { q: "What effect does tiredness have on driving?", a: "Slows reaction time, reduces concentration, impairs judgement, and can cause microsleeps (falling asleep for seconds without knowing)." },
+          { q: "How long should you wait after taking prescription drugs before driving?", a: "Check the label for drowsiness warnings. If in doubt, ask your doctor or pharmacist. Some drugs are as dangerous as alcohol." },
+        ]
+      },
+      {
+        id: "rules",
+        name: "Rules of the Road",
+        color: "#f43f5e",
+        cards: [
+          { q: "What do double white lines in the centre of the road mean?", a: "If the line nearest to you is continuous (unbroken), you MUST NOT cross or straddle it, except to turn into a property or pass a stationary vehicle/obstruction." },
+          { q: "What do single yellow lines mean?", a: "No parking during the times shown on nearby plates (usually during working hours)." },
+          { q: "What do double yellow lines mean?", a: "No parking at any time (though you may briefly stop to load/unload or pick up/drop off passengers)." },
+          { q: "What does a zig-zag white line near a crossing mean?", a: "You MUST NOT park or stop on these lines. They provide clear visibility for pedestrians and drivers." },
+          { q: "When may you cross a solid white centre line?", a: "To pass a stationary obstruction, a road maintenance vehicle, a pedal cycle, horse, or to enter premises or a side road." },
+          { q: "What side of the road should you park on at night?", a: "On the LEFT side (nearside), facing the direction of traffic flow, unless in a one-way street." },
+          { q: "When is it illegal to sound your horn?", a: "Between 11:30 pm and 7:00 am in a built-up area (unless a moving vehicle poses a danger). Never use it aggressively." },
+          { q: "What is the speed limit when towing a trailer on a motorway?", a: "60 mph. Vehicles towing trailers must not use the right-hand lane of a three-lane motorway." },
+          { q: "What is a contraflow system?", a: "Where traffic in both directions shares the same carriageway (often on motorways during roadworks). Reduced speed limits apply and there are usually no overtaking restrictions." },
+          { q: "Where must you NOT park?", a: "On a pedestrian crossing or its zig-zag lines, in front of someone's driveway, on a clearway, near a school entrance, or anywhere you'd cause an obstruction." },
+        ]
+      },
+      {
+        id: "hazard",
+        name: "Hazard Perception",
+        color: "#64748b",
+        cards: [
+          { q: "How many hazard perception clips are in the test?", a: "14 video clips. 13 clips have one developing hazard. ONE clip has TWO developing hazards." },
+          { q: "What is the pass mark for hazard perception?", a: "44 out of 75." },
+          { q: "What is a 'developing hazard'?", a: "Something that causes you to change speed or direction. E.g. a car pulling out of a junction, a pedestrian stepping off the kerb." },
+          { q: "When should you click during hazard perception?", a: "As SOON as the hazard starts to develop \u2014 early clicks score higher (up to 5 points). Don't wait until it's a full emergency." },
+          { q: "What happens if you click too many times in a pattern?", a: "The system detects cheating patterns and you'll score ZERO for that clip." },
+          { q: "What are common developing hazards to look for?", a: "Vehicles emerging from side roads, pedestrians stepping out, cyclists ahead, parked cars with doors opening, road workers, and vehicles slowing ahead." },
+          { q: "What is the multiple choice pass mark?", a: "43 out of 50 questions correct." },
+          { q: "How long do you have for the multiple choice section?", a: "57 minutes for 50 questions." },
+          { q: "What is a 'static hazard'?", a: "Something that is always present (e.g. a parked car, road sign, speed bump). You do NOT click for static hazards \u2014 only developing ones." },
+          { q: "What is the scoring window for hazard perception?", a: "There are 5 scoring zones. Clicking in the earliest zone scores 5 points, the next 4, then 3, 2, 1, and after that 0." },
+        ]
+      },
+      {
+        id: "eco",
+        name: "Eco & Environment",
+        color: "#84cc16",
+        cards: [
+          { q: "How can you reduce fuel consumption?", a: "Smooth driving, avoid harsh acceleration/braking, remove roof racks when not in use, check tyre pressure, use higher gears when possible, and reduce speed." },
+          { q: "What is 'eco-safe driving'?", a: "A style of driving that reduces fuel consumption and emissions: smooth acceleration, reading the road ahead, anticipating stops, and maintaining a steady speed." },
+          { q: "Should you leave your engine running when stationary?", a: "No \u2014 switch off the engine if you're going to be stationary for a while to reduce emissions and save fuel." },
+          { q: "What is the purpose of the catalytic converter?", a: "To reduce toxic exhaust emissions (carbon monoxide, nitrogen oxides, hydrocarbons) before they leave the exhaust pipe." },
+          { q: "How does excess speed affect fuel consumption?", a: "Driving at 70 mph uses up to 30% more fuel than driving at 50 mph." },
+          { q: "How does roof rack/box affect the car?", a: "Increases wind resistance (drag), which increases fuel consumption. Remove when not in use." },
+          { q: "How does tyre pressure affect fuel consumption?", a: "Under-inflated tyres increase rolling resistance, which increases fuel consumption and causes uneven tyre wear." },
+        ]
+      },
+      {
+        id: "other",
+        name: "Other Vehicles & Road Users",
+        color: "#d946ef",
+        cards: [
+          { q: "Why should you take extra care around long vehicles at roundabouts?", a: "They may need to take a different course or straddle lanes to turn. Give them plenty of room and don't try to overtake." },
+          { q: "What should you do if you see a bus signalling to pull out?", a: "Give way to it if you can do so safely. Buses have difficulty re-joining traffic." },
+          { q: "What should you be aware of with trams?", a: "Trams cannot steer to avoid you. They are quiet and may be faster than expected. Do not park on tram lines." },
+          { q: "What is a crawler lane?", a: "An extra lane on a steep uphill gradient for slow-moving vehicles (e.g. lorries) to use, keeping the main lanes clear." },
+          { q: "Why are lorries dangerous in windy conditions?", a: "High-sided vehicles can be blown off course by crosswinds, especially on exposed roads and bridges." },
+          { q: "What should you do when following a large vehicle?", a: "Drop back to increase your view ahead. Don't get too close \u2014 if you can't see their mirrors, they can't see you." },
+          { q: "What does a flashing amber beacon on a vehicle indicate?", a: "A slow-moving or stationary vehicle (e.g. gritter, recovery vehicle). Proceed with caution." },
+          { q: "What does a green flashing beacon indicate?", a: "A doctor on an emergency call." },
+          { q: "What does a blue flashing beacon indicate?", a: "Emergency vehicle (police, fire, ambulance). Give way immediately and pull to the left if safe." },
+        ]
+      }
+    ];
+
+    function shuffle(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    const STORAGE_KEY = "theory-flashcard-scores";
+
+    function loadScores() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch { return {}; }
+    }
+
+    function persistScores(s) {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch {}
+      // Fire-and-forget sync to server
+      fetch("/api/scores", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(s),
+      }).catch(() => {});
+    }
+
+    async function fetchRemoteScores() {
+      try {
+        const res = await fetch("/api/scores");
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data && typeof data === "object" && !data.error ? data : null;
+      } catch { return null; }
+    }
+
+    function mergeScores(local, remote) {
+      if (!remote) return local;
+      const merged = { ...local };
+      for (const key of Object.keys(remote)) {
+        if (!merged[key]) {
+          merged[key] = remote[key];
+        } else {
+          merged[key] = {
+            right: Math.max(merged[key].right, remote[key].right),
+            wrong: Math.max(merged[key].wrong, remote[key].wrong),
+          };
+        }
+      }
+      return merged;
+    }
+
+    function TheoryFlashcards() {
+      const [mode, setMode] = useState("menu");
+      const [selectedCats, setSelectedCats] = useState([]);
+      const [cards, setCards] = useState([]);
+      const [idx, setIdx] = useState(0);
+      const [flipped, setFlipped] = useState(false);
+      const [scores, setScores] = useState(loadScores);
+      const [sessionResults, setSessionResults] = useState([]);
+
+      useEffect(() => {
+        fetchRemoteScores().then(remote => {
+          if (remote) {
+            const merged = mergeScores(loadScores(), remote);
+            setScores(merged);
+            persistScores(merged);
+          }
+        });
+      }, []);
+
+      const saveScores = (s) => {
+        setScores(s);
+        persistScores(s);
+      };
+
+      const startSession = (catIds) => {
+        const selected = CATEGORIES.filter(c => catIds.includes(c.id));
+        const allCards = selected.flatMap(c => c.cards.map(card => ({ ...card, catId: c.id, catName: c.name, catColor: c.color })));
+        setCards(shuffle(allCards));
+        setIdx(0);
+        setFlipped(false);
+        setSessionResults([]);
+        setMode("study");
+      };
+
+      const markCard = (correct) => {
+        const card = cards[idx];
+        const key = card.catId + ":" + card.q.slice(0, 40);
+        const newScores = { ...scores };
+        if (!newScores[key]) newScores[key] = { right: 0, wrong: 0 };
+        if (correct) newScores[key].right++; else newScores[key].wrong++;
+        saveScores(newScores);
+        setSessionResults([...sessionResults, { card, correct }]);
+        if (idx < cards.length - 1) {
+          setIdx(idx + 1);
+          setFlipped(false);
+        } else {
+          setMode("results");
+        }
+      };
+
+      useEffect(() => {
+        const handleKey = (e) => {
+          if (mode !== "study") return;
+          if (e.code === "Space") { e.preventDefault(); setFlipped(f => !f); }
+        };
+        window.addEventListener("keydown", handleKey);
+        return () => window.removeEventListener("keydown", handleKey);
+      }, [mode]);
+
+      const totalCards = CATEGORIES.reduce((s, c) => s + c.cards.length, 0);
+      const totalRight = Object.values(scores).reduce((s, v) => s + v.right, 0);
+      const totalAttempts = Object.values(scores).reduce((s, v) => s + v.right + v.wrong, 0);
+
+      const getCatStats = (catId) => {
+        const cat = CATEGORIES.find(c => c.id === catId);
+        let right = 0, total = 0;
+        cat.cards.forEach(card => {
+          const key = catId + ":" + card.q.slice(0, 40);
+          if (scores[key]) { right += scores[key].right; total += scores[key].right + scores[key].wrong; }
+        });
+        return { right, total, pct: total > 0 ? Math.round((right / total) * 100) : null };
+      };
+
+      if (mode === "menu") {
+        return (
+          <div style={{ minHeight: "100vh", background: "#0a0a0f", color: "#e8e6e3" }}>
+            <div style={{ background: "linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%)", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "32px 24px 28px" }}>
+              <div style={{ maxWidth: 680, margin: "0 auto" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+                  <span style={{ fontSize: 28 }}>{"\ud83e\udde0"}</span>
+                  <h1 style={{ fontSize: 26, fontWeight: 700, margin: 0, background: "linear-gradient(90deg, #f97316, #ef4444, #ec4899)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Theory Test Flashcards</h1>
+                </div>
+                <p style={{ color: "#8a8a9a", margin: "4px 0 16px", fontSize: 14, fontFamily: "'DM Mono', monospace" }}>
+                  {totalCards} cards across {CATEGORIES.length} topics
+                  {totalAttempts > 0 && (" \u00b7 " + Math.round((totalRight / totalAttempts) * 100) + "% accuracy over " + totalAttempts + " attempts")}
+                </p>
+
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button onClick={() => { setSelectedCats(CATEGORIES.map(c => c.id)); startSession(CATEGORIES.map(c => c.id)); }}
+                    style={{ padding: "10px 20px", background: "linear-gradient(135deg, #ef4444, #f97316)", border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>
+                    Study All ({totalCards} cards)
+                  </button>
+                  <button onClick={() => {
+                    const weak = CATEGORIES.filter(c => { const s = getCatStats(c.id); return s.pct !== null && s.pct < 75; });
+                    const ids = weak.length > 0 ? weak.map(c => c.id) : CATEGORIES.map(c => c.id);
+                    setSelectedCats(ids); startSession(ids);
+                  }} style={{ padding: "10px 20px", background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, color: "#f87171", fontWeight: 700, cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>
+                    Weak Topics Only
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ maxWidth: 680, margin: "0 auto", padding: "16px 24px 60px" }}>
+              {CATEGORIES.map(cat => {
+                const stats = getCatStats(cat.id);
+                return (
+                  <div key={cat.id} onClick={() => { setSelectedCats([cat.id]); startSession([cat.id]); }}
+                    style={{
+                      margin: "8px 0", padding: "14px 16px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)",
+                      borderRadius: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 14, transition: "all 0.15s",
+                    }}>
+                    <div style={{ width: 8, height: 40, borderRadius: 4, background: cat.color, flexShrink: 0 }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 15, fontWeight: 600, color: "#d0d0e0" }}>{cat.name}</div>
+                      <div style={{ fontSize: 12, color: "#6b6b7b", marginTop: 2, fontFamily: "'DM Mono', monospace" }}>
+                        {cat.cards.length} cards
+                        {stats.pct !== null && (" \u00b7 " + stats.pct + "% accuracy")}
+                      </div>
+                    </div>
+                    {stats.pct !== null && (
+                      <div style={{
+                        width: 44, height: 44, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                        background: stats.pct >= 80 ? "rgba(52,211,153,0.12)" : stats.pct >= 60 ? "rgba(251,191,36,0.12)" : "rgba(239,68,68,0.12)",
+                        color: stats.pct >= 80 ? "#34d399" : stats.pct >= 60 ? "#fbbf24" : "#f87171",
+                        fontSize: 13, fontWeight: 700, fontFamily: "'DM Mono', monospace",
+                      }}>
+                        {stats.pct}%
+                      </div>
+                    )}
+                    <span style={{ color: "#444", fontSize: 18 }}>{"\u2192"}</span>
+                  </div>
+                );
+              })}
+
+              {totalAttempts > 0 && (
+                <button onClick={() => {
+                  if (confirm("Reset all flashcard progress?")) { saveScores({}); }
+                }} style={{
+                  display: "block", margin: "24px auto 0", padding: "8px 20px", background: "transparent",
+                  border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "#555", fontSize: 12,
+                  cursor: "pointer", fontFamily: "'DM Mono', monospace",
+                }}>Reset all scores</button>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      if (mode === "results") {
+        const correct = sessionResults.filter(r => r.correct).length;
+        const total = sessionResults.length;
+        const pct = Math.round((correct / total) * 100);
+        const wrong = sessionResults.filter(r => !r.correct);
+
+        return (
+          <div style={{ minHeight: "100vh", background: "#0a0a0f", color: "#e8e6e3" }}>
+            <div style={{ maxWidth: 680, margin: "0 auto", padding: "40px 24px" }}>
+              <div style={{ textAlign: "center", marginBottom: 32 }}>
+                <div style={{ fontSize: 64, marginBottom: 8 }}>{pct >= 86 ? "\ud83c\udfc6" : pct >= 60 ? "\ud83d\udcc8" : "\ud83d\udcaa"}</div>
+                <h2 style={{ fontSize: 28, fontWeight: 700, margin: "0 0 8px", color: pct >= 86 ? "#34d399" : pct >= 60 ? "#fbbf24" : "#f87171" }}>
+                  {correct}/{total} — {pct}%
+                </h2>
+                <p style={{ color: "#8a8a9a", fontSize: 14 }}>
+                  {pct >= 86 ? "Smashing it! You're test-ready on these topics." : pct >= 60 ? "Good progress — keep drilling the ones you missed." : "Keep going — focus on the cards below."}
+                </p>
+              </div>
+
+              {wrong.length > 0 && (
+                <div style={{ marginBottom: 32 }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, color: "#f87171", marginBottom: 12, fontFamily: "'DM Mono', monospace" }}>
+                    REVIEW THESE ({wrong.length})
+                  </h3>
+                  {wrong.map((r, i) => (
+                    <div key={i} style={{
+                      margin: "8px 0", padding: "14px 16px", background: "rgba(239,68,68,0.05)",
+                      border: "1px solid rgba(239,68,68,0.12)", borderRadius: 10,
+                    }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#e0c0c0", marginBottom: 6 }}>{r.card.q}</div>
+                      <div style={{ fontSize: 13, color: "#9a9aaa", lineHeight: 1.5 }}>{r.card.a}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                {wrong.length > 0 && (
+                  <button onClick={() => { setCards(shuffle(wrong.map(r => r.card))); setIdx(0); setFlipped(false); setSessionResults([]); setMode("study"); }}
+                    style={{ padding: "12px 24px", background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, color: "#f87171", fontWeight: 700, cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>
+                    Retry Wrong ({wrong.length})
+                  </button>
+                )}
+                <button onClick={() => setMode("menu")}
+                  style={{ padding: "12px 24px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#b0b0c0", fontWeight: 600, cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>
+                  Back to Topics
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      const card = cards[idx];
+      const progress = ((idx + 1) / cards.length) * 100;
+
+      return (
+        <div style={{ minHeight: "100vh", background: "#0a0a0f", color: "#e8e6e3", display: "flex", flexDirection: "column" }}>
+          {/* Top bar */}
+          <div style={{ padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <button onClick={() => setMode("menu")} style={{ background: "none", border: "none", color: "#6b6b7b", cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>
+              {"\u2190"} Back
+            </button>
+            <span style={{ fontSize: 13, color: "#6b6b7b", fontFamily: "'DM Mono', monospace" }}>
+              {idx + 1} / {cards.length}
+            </span>
+            <button onClick={() => { if (confirm("End session?")) setMode("results"); }}
+              style={{ background: "none", border: "none", color: "#6b6b7b", cursor: "pointer", fontSize: 13, fontFamily: "'DM Mono', monospace" }}>
+              End
+            </button>
+          </div>
+
+          {/* Progress bar */}
+          <div style={{ height: 3, background: "rgba(255,255,255,0.06)" }}>
+            <div style={{ height: "100%", width: progress + "%", background: card.catColor, transition: "width 0.3s" }} />
+          </div>
+
+          {/* Card */}
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: card.catColor, fontFamily: "'DM Mono', monospace", marginBottom: 16 }}>
+              {card.catName.toUpperCase()}
+            </span>
+
+            <div onClick={() => setFlipped(!flipped)} style={{
+              width: "100%", maxWidth: 560, minHeight: 280, padding: "32px 28px",
+              background: flipped ? card.catColor + "0a" : "rgba(255,255,255,0.04)",
+              border: "1px solid " + (flipped ? card.catColor + "25" : "rgba(255,255,255,0.08)"),
+              borderRadius: 16, cursor: "pointer", transition: "all 0.2s",
+              display: "flex", flexDirection: "column", justifyContent: "center",
+            }}>
+              {!flipped ? (
+                <React.Fragment>
+                  <div style={{ fontSize: 20, fontWeight: 600, lineHeight: 1.5, color: "#e0e0ef", marginBottom: 16 }}>
+                    {card.q}
+                  </div>
+                  <div style={{ fontSize: 13, color: "#555", fontFamily: "'DM Mono', monospace" }}>
+                    tap to reveal answer
+                  </div>
+                </React.Fragment>
+              ) : (
+                <React.Fragment>
+                  <div style={{ fontSize: 13, color: "#666", marginBottom: 8, fontFamily: "'DM Mono', monospace" }}>ANSWER</div>
+                  <div style={{ fontSize: 17, lineHeight: 1.6, color: "#c0d0c0" }}>
+                    {card.a}
+                  </div>
+                </React.Fragment>
+              )}
+            </div>
+
+            {/* Buttons */}
+            {flipped && (
+              <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
+                <button onClick={() => markCard(false)} style={{
+                  padding: "14px 36px", background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)",
+                  borderRadius: 12, color: "#f87171", fontWeight: 700, cursor: "pointer", fontSize: 15, fontFamily: "inherit",
+                }}>
+                  {"\u2717"} Got it wrong
+                </button>
+                <button onClick={() => markCard(true)} style={{
+                  padding: "14px 36px", background: "rgba(52,211,153,0.12)", border: "1px solid rgba(52,211,153,0.25)",
+                  borderRadius: 12, color: "#34d399", fontWeight: 700, cursor: "pointer", fontSize: 15, fontFamily: "inherit",
+                }}>
+                  {"\u2713"} Got it right
+                </button>
+              </div>
+            )}
+
+            {!flipped && (
+              <div style={{ marginTop: 20, fontSize: 12, color: "#444" }}>
+                Tap the card or press Space to flip
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<TheoryFlashcards />);
+  </script>
+</body>
+</html>

@@ -435,6 +435,85 @@
       }
     ];
 
+    // ── FSRS-5 Engine (translated from femto-fsrs) ──
+    const Grade = { AGAIN: 1, HARD: 2, GOOD: 3, EASY: 4 };
+    const DECAY = -0.5;
+    const FACTOR = 19 / 81;
+    const DEFAULT_W = [0.40255,1.18385,3.173,15.69105,7.1949,0.5345,1.4604,0.0046,1.54575,0.1192,1.01925,1.9395,0.11,0.29605,2.2698,0.2315,2.9898,0.51655,0.6621];
+
+    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+
+    function createDeck(params) {
+      const w = (params && params.w) || DEFAULT_W;
+      const rr = (params && params.requestedRetentionRate) || 0.9;
+      const MAX_S = (params && params.maxStability) || 36500;
+
+      const retrievability = (t, S) => Math.pow(1 + FACTOR * (t / S), DECAY);
+      const nextInterval = (R, S) => Math.max(1, (S / FACTOR) * (Math.pow(R, 1 / DECAY) - 1));
+      const initialStability = (G) => w[G - 1];
+      const initialDifficulty = (G) => clamp(w[4] - Math.exp(w[5] * (G - 1)) + 1, 1, 10);
+      const nextDifficulty = (D, G) => {
+        const delta = -w[6] * (G - 3);
+        const Dprime = D + delta * ((10 - D) / 9);
+        return clamp(w[7] * initialDifficulty(Grade.EASY) + (1 - w[7]) * Dprime, 1, 10);
+      };
+      const nextStabilityAfterRecall = (d, s, r, g) => {
+        const hp = g === Grade.HARD ? w[15] : 1;
+        const eb = g === Grade.EASY ? w[16] : 1;
+        const mult = Math.exp(w[8]) * (11 - d) * Math.pow(s, -w[9]) * (Math.exp((1 - r) * w[10]) - 1) * hp * eb;
+        return clamp(s * (1 + mult), 0, MAX_S);
+      };
+      const nextStabilityAfterForgetting = (d, s, r) => {
+        return clamp(w[11] * Math.pow(d, -w[12]) * (Math.pow(s + 1, w[13]) - 1) * Math.exp((1 - r) * w[14]), 0, MAX_S);
+      };
+
+      return {
+        newCard(firstGrade) {
+          const D = initialDifficulty(firstGrade);
+          const S = clamp(initialStability(firstGrade), 0, MAX_S);
+          const I = nextInterval(rr, S);
+          return { D, S, I };
+        },
+        gradeCard(card, daysSinceReview, grade) {
+          const D = nextDifficulty(card.D, grade);
+          let S;
+          if (daysSinceReview < 1) {
+            S = card.S * Math.exp(w[17] * (grade - 3 + w[18]));
+          } else {
+            const R = retrievability(daysSinceReview, card.S);
+            S = grade === Grade.AGAIN
+              ? nextStabilityAfterForgetting(D, card.S, R)
+              : nextStabilityAfterRecall(D, card.S, R, grade);
+          }
+          const I = nextInterval(rr, clamp(S, 0, MAX_S));
+          return { D, S, I };
+        },
+      };
+    }
+
+    function formatInterval(days) {
+      if (days < 1/1440) return "<1m";
+      if (days < 1/24) return Math.round(days * 1440) + "m";
+      if (days < 1) return Math.round(days * 24) + "h";
+      if (days < 30) return Math.round(days) + "d";
+      if (days < 365) return Math.round(days / 30) + "mo";
+      return (days / 365).toFixed(1) + "y";
+    }
+
+    function getIntervalPreviews(card, scores) {
+      const deck = createDeck();
+      const key = card.catId + ":" + card.q.slice(0, 40);
+      const s = scores[key];
+      const previews = {};
+      if (!s || !s._fsrs) {
+        [Grade.AGAIN, Grade.HARD, Grade.GOOD, Grade.EASY].forEach(g => { previews[g] = formatInterval(deck.newCard(g).I); });
+      } else {
+        const daysSince = Math.max(0, (Date.now() - s.lastSeen) / 86400000);
+        [Grade.AGAIN, Grade.HARD, Grade.GOOD, Grade.EASY].forEach(g => { previews[g] = formatInterval(deck.gradeCard({ D: s.D, S: s.S }, daysSince, g).I); });
+      }
+      return previews;
+    }
+
     function shuffle(arr) {
       const a = [...arr];
       for (let i = a.length - 1; i > 0; i--) {
@@ -446,10 +525,38 @@
 
     const STORAGE_KEY = "theory-flashcard-scores";
 
+    function migrateScore(old) {
+      const total = (old.right || 0) + (old.wrong || 0);
+      if (total === 0) return null;
+      const acc = old.right / total;
+      const grade = acc >= 0.9 ? Grade.EASY : acc >= 0.7 ? Grade.GOOD : acc >= 0.4 ? Grade.HARD : Grade.AGAIN;
+      const deck = createDeck();
+      let state = deck.newCard(grade);
+      const sims = Math.min(old.right || 0, 5);
+      for (let i = 0; i < sims; i++) state = deck.gradeCard(state, state.I, Grade.GOOD);
+      return {
+        D: state.D, S: state.S, I: state.I,
+        due: (old.lastSeen || Date.now()) + state.I * 86400000,
+        state: 2, reps: old.right || 0, lapses: old.wrong || 0,
+        right: old.right || 0, wrong: old.wrong || 0,
+        lastSeen: old.lastSeen || Date.now(), _fsrs: true,
+      };
+    }
+
     function loadScores() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        return raw ? JSON.parse(raw) : {};
+        const scores = raw ? JSON.parse(raw) : {};
+        let changed = false;
+        for (const key of Object.keys(scores)) {
+          if (scores[key] && !scores[key]._fsrs) {
+            const migrated = migrateScore(scores[key]);
+            if (migrated) { scores[key] = migrated; changed = true; }
+            else { delete scores[key]; changed = true; }
+          }
+        }
+        if (changed) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(scores)); } catch {} }
+        return scores;
       } catch { return {}; }
     }
 
@@ -478,6 +585,9 @@
       for (const key of Object.keys(remote)) {
         if (!merged[key]) {
           merged[key] = remote[key];
+        } else if (merged[key]._fsrs || remote[key]._fsrs) {
+          // FSRS data: prefer whichever was reviewed more recently
+          if ((remote[key].lastSeen || 0) > (merged[key].lastSeen || 0)) merged[key] = remote[key];
         } else {
           merged[key] = {
             right: Math.max(merged[key].right, remote[key].right),
@@ -516,26 +626,34 @@
       const startSession = (catIds) => {
         const selected = CATEGORIES.filter(c => catIds.includes(c.id));
         const allCards = selected.flatMap(c => c.cards.map(card => ({ ...card, catId: c.id, catName: c.name, catColor: c.color })));
-
-        // Smart ordering: unseen first, then wrong, then correct (oldest-seen first)
-        const unseen = [];
-        const wrong = [];
-        const correct = [];
+        const now = Date.now();
+        const overdue = [], learning = [], newCards = [], dueToday = [], future = [];
         for (const card of allCards) {
           const key = card.catId + ":" + card.q.slice(0, 40);
           const s = scores[key];
-          if (!s) {
-            unseen.push(card);
-          } else if (s.right <= s.wrong) {
-            wrong.push(card);
+          if (!s || !s._fsrs) {
+            newCards.push(card);
+          } else if (s.state === 1 || s.state === 3) {
+            learning.push({ card, due: s.due });
+          } else if (s.due <= now) {
+            overdue.push({ card, due: s.due });
+          } else if (s.due <= now + 86400000) {
+            dueToday.push({ card, due: s.due });
           } else {
-            correct.push({ card, lastSeen: s.lastSeen || 0 });
+            future.push({ card, due: s.due });
           }
         }
-        // Unseen and wrong are shuffled; correct sorted oldest-seen first
-        correct.sort((a, b) => a.lastSeen - b.lastSeen);
-        const ordered = [...shuffle(unseen), ...shuffle(wrong), ...correct.map(c => c.card)];
-
+        overdue.sort((a, b) => a.due - b.due);
+        learning.sort((a, b) => a.due - b.due);
+        dueToday.sort((a, b) => a.due - b.due);
+        future.sort((a, b) => a.due - b.due);
+        const ordered = [
+          ...overdue.map(x => x.card),
+          ...learning.map(x => x.card),
+          ...shuffle(newCards),
+          ...dueToday.map(x => x.card),
+          ...future.map(x => x.card),
+        ];
         setCards(ordered);
         setIdx(0);
         setFlipped(false);
@@ -543,15 +661,42 @@
         setMode("study");
       };
 
-      const markCard = (correct) => {
+      const markCard = (grade) => {
         const card = cards[idx];
         const key = card.catId + ":" + card.q.slice(0, 40);
+        const deck = createDeck();
         const newScores = { ...scores };
-        if (!newScores[key]) newScores[key] = { right: 0, wrong: 0, lastSeen: 0 };
-        if (correct) newScores[key].right++; else newScores[key].wrong++;
-        newScores[key].lastSeen = Date.now();
+        const now = Date.now();
+        const prev = newScores[key];
+        let fsrs;
+        if (!prev || !prev._fsrs) {
+          fsrs = deck.newCard(grade);
+          newScores[key] = {
+            D: fsrs.D, S: fsrs.S, I: fsrs.I,
+            due: now + fsrs.I * 86400000,
+            state: grade === Grade.AGAIN ? 1 : 2,
+            reps: grade >= Grade.HARD ? 1 : 0,
+            lapses: grade === Grade.AGAIN ? 1 : 0,
+            right: grade >= Grade.HARD ? 1 : 0,
+            wrong: grade === Grade.AGAIN ? 1 : 0,
+            lastSeen: now, _fsrs: true,
+          };
+        } else {
+          const daysSince = Math.max(0, (now - prev.lastSeen) / 86400000);
+          fsrs = deck.gradeCard({ D: prev.D, S: prev.S }, daysSince, grade);
+          newScores[key] = {
+            D: fsrs.D, S: fsrs.S, I: fsrs.I,
+            due: now + fsrs.I * 86400000,
+            state: grade === Grade.AGAIN ? 3 : 2,
+            reps: prev.reps + (grade >= Grade.HARD ? 1 : 0),
+            lapses: prev.lapses + (grade === Grade.AGAIN ? 1 : 0),
+            right: prev.right + (grade >= Grade.HARD ? 1 : 0),
+            wrong: prev.wrong + (grade === Grade.AGAIN ? 1 : 0),
+            lastSeen: now, _fsrs: true,
+          };
+        }
         saveScores(newScores);
-        setSessionResults([...sessionResults, { card, correct }]);
+        setSessionResults([...sessionResults, { card, grade, nextInterval: fsrs.I }]);
         if (idx < cards.length - 1) {
           setIdx(idx + 1);
           setFlipped(false);
@@ -565,9 +710,14 @@
           if (mode !== "study") return;
           if (e.code === "Space") {
             e.preventDefault();
-            if (!flipped) { setFlipped(true); } else { markCard(true); }
+            if (!flipped) { setFlipped(true); } else { markCard(Grade.GOOD); }
           }
-          if (flipped && (e.key === "n" || e.key === "N")) { markCard(false); }
+          if (flipped) {
+            if (e.key === "1" || e.key === "n" || e.key === "N") markCard(Grade.AGAIN);
+            if (e.key === "2") markCard(Grade.HARD);
+            if (e.key === "3") markCard(Grade.GOOD);
+            if (e.key === "4") markCard(Grade.EASY);
+          }
         };
         window.addEventListener("keydown", handleKey);
         return () => window.removeEventListener("keydown", handleKey);
@@ -579,12 +729,18 @@
 
       const getCatStats = (catId) => {
         const cat = CATEGORIES.find(c => c.id === catId);
-        let right = 0, total = 0;
+        let right = 0, total = 0, due = 0;
+        const now = Date.now();
         cat.cards.forEach(card => {
           const key = catId + ":" + card.q.slice(0, 40);
-          if (scores[key]) { right += scores[key].right; total += scores[key].right + scores[key].wrong; }
+          const s = scores[key];
+          if (!s || !s._fsrs) { due++; }
+          else {
+            right += s.right; total += s.right + s.wrong;
+            if (s.due <= now) due++;
+          }
         });
-        return { right, total, pct: total > 0 ? Math.round((right / total) * 100) : null };
+        return { right, total, pct: total > 0 ? Math.round((right / total) * 100) : null, due };
       };
 
       if (mode === "menu") {
@@ -598,7 +754,8 @@
                 </div>
                 <p style={{ color: "#8a8a9a", margin: "4px 0 16px", fontSize: 14, fontFamily: "'DM Mono', monospace" }}>
                   {totalCards} cards across {CATEGORIES.length} topics
-                  {totalAttempts > 0 && (" \u00b7 " + Math.round((totalRight / totalAttempts) * 100) + "% accuracy over " + totalAttempts + " attempts")}
+                  {totalAttempts > 0 && (" \u00b7 " + Math.round((totalRight / totalAttempts) * 100) + "% accuracy")}
+                  {" \u00b7 "}{CATEGORIES.reduce((s, c) => s + getCatStats(c.id).due, 0)} due for review
                 </p>
 
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -631,7 +788,8 @@
                       <div style={{ fontSize: 15, fontWeight: 600, color: "#d0d0e0" }}>{cat.name}</div>
                       <div style={{ fontSize: 12, color: "#6b6b7b", marginTop: 2, fontFamily: "'DM Mono', monospace" }}>
                         {cat.cards.length} cards
-                        {stats.pct !== null && (" \u00b7 " + stats.pct + "% accuracy")}
+                        {stats.pct !== null && (" \u00b7 " + stats.pct + "%")}
+                        {stats.due > 0 && <span style={{ color: "#f97316" }}> \u00b7 {stats.due} due</span>}
                       </div>
                     </div>
                     {stats.pct !== null && (
@@ -664,35 +822,53 @@
       }
 
       if (mode === "results") {
-        const correct = sessionResults.filter(r => r.correct).length;
+        const againCount = sessionResults.filter(r => r.grade === Grade.AGAIN).length;
+        const hardCount = sessionResults.filter(r => r.grade === Grade.HARD).length;
+        const goodCount = sessionResults.filter(r => r.grade === Grade.GOOD).length;
+        const easyCount = sessionResults.filter(r => r.grade === Grade.EASY).length;
+        const passed = hardCount + goodCount + easyCount;
         const total = sessionResults.length;
-        const pct = Math.round((correct / total) * 100);
-        const wrong = sessionResults.filter(r => !r.correct);
+        const pct = total > 0 ? Math.round((passed / total) * 100) : 0;
+        const needsWork = sessionResults.filter(r => r.grade <= Grade.HARD);
 
         return (
           <div style={{ minHeight: "100vh", background: "#0a0a0f", color: "#e8e6e3" }}>
             <div style={{ maxWidth: 680, margin: "0 auto", padding: "40px 24px" }}>
               <div style={{ textAlign: "center", marginBottom: 32 }}>
-                <div style={{ fontSize: 64, marginBottom: 8 }}>{pct >= 86 ? "\ud83c\udfc6" : pct >= 60 ? "\ud83d\udcc8" : "\ud83d\udcaa"}</div>
                 <h2 style={{ fontSize: 28, fontWeight: 700, margin: "0 0 8px", color: pct >= 86 ? "#34d399" : pct >= 60 ? "#fbbf24" : "#f87171" }}>
-                  {correct}/{total} — {pct}%
+                  {passed}/{total} — {pct}%
                 </h2>
-                <p style={{ color: "#8a8a9a", fontSize: 14 }}>
+                <p style={{ color: "#8a8a9a", fontSize: 14, marginBottom: 16 }}>
                   {pct >= 86 ? "Smashing it! You're test-ready on these topics." : pct >= 60 ? "Good progress — keep drilling the ones you missed." : "Keep going — focus on the cards below."}
                 </p>
+                <div style={{ display: "flex", gap: 16, justifyContent: "center", fontSize: 13, fontFamily: "'DM Mono', monospace" }}>
+                  {againCount > 0 && <span style={{ color: "#f87171" }}>Again: {againCount}</span>}
+                  {hardCount > 0 && <span style={{ color: "#fbbf24" }}>Hard: {hardCount}</span>}
+                  <span style={{ color: "#34d399" }}>Good: {goodCount}</span>
+                  {easyCount > 0 && <span style={{ color: "#60a5fa" }}>Easy: {easyCount}</span>}
+                </div>
               </div>
 
-              {wrong.length > 0 && (
+              {needsWork.length > 0 && (
                 <div style={{ marginBottom: 32 }}>
                   <h3 style={{ fontSize: 14, fontWeight: 700, color: "#f87171", marginBottom: 12, fontFamily: "'DM Mono', monospace" }}>
-                    REVIEW THESE ({wrong.length})
+                    NEEDS WORK ({needsWork.length})
                   </h3>
-                  {wrong.map((r, i) => (
+                  {needsWork.map((r, i) => (
                     <div key={i} style={{
-                      margin: "8px 0", padding: "14px 16px", background: "rgba(239,68,68,0.05)",
-                      border: "1px solid rgba(239,68,68,0.12)", borderRadius: 10,
+                      margin: "8px 0", padding: "14px 16px",
+                      background: r.grade === Grade.AGAIN ? "rgba(239,68,68,0.05)" : "rgba(251,191,36,0.05)",
+                      border: "1px solid " + (r.grade === Grade.AGAIN ? "rgba(239,68,68,0.12)" : "rgba(251,191,36,0.12)"),
+                      borderRadius: 10,
                     }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#e0c0c0", marginBottom: 6 }}>{r.card.q.replace(/ \[Sign .+\]$/, "")}</div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: r.grade === Grade.AGAIN ? "#e0c0c0" : "#e0d8c0" }}>
+                          {r.card.q.replace(/ \[Sign .+\]$/, "")}
+                        </div>
+                        <span style={{ fontSize: 11, color: "#666", fontFamily: "'DM Mono', monospace", flexShrink: 0, marginLeft: 8 }}>
+                          Next: {formatInterval(r.nextInterval)}
+                        </span>
+                      </div>
                       <div style={{ fontSize: 13, color: "#9a9aaa", lineHeight: 1.5 }}>{r.card.a}</div>
                     </div>
                   ))}
@@ -700,10 +876,10 @@
               )}
 
               <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-                {wrong.length > 0 && (
-                  <button onClick={() => { setCards(shuffle(wrong.map(r => r.card))); setIdx(0); setFlipped(false); setSessionResults([]); setMode("study"); }}
+                {needsWork.length > 0 && (
+                  <button onClick={() => { setCards(shuffle(needsWork.map(r => r.card))); setIdx(0); setFlipped(false); setSessionResults([]); setMode("study"); }}
                     style={{ padding: "12px 24px", background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, color: "#f87171", fontWeight: 700, cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>
-                    Retry Wrong ({wrong.length})
+                    Retry Difficult ({needsWork.length})
                   </button>
                 )}
                 <button onClick={() => setMode("menu")}
@@ -782,23 +958,36 @@
               )}
             </div>
 
-            {/* Buttons */}
-            {flipped && (
-              <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
-                <button onClick={() => markCard(false)} style={{
-                  padding: "14px 36px", background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)",
-                  borderRadius: 12, color: "#f87171", fontWeight: 700, cursor: "pointer", fontSize: 15, fontFamily: "inherit",
-                }}>
-                  {"\u2717"} Got it wrong
-                </button>
-                <button onClick={() => markCard(true)} style={{
-                  padding: "14px 36px", background: "rgba(52,211,153,0.12)", border: "1px solid rgba(52,211,153,0.25)",
-                  borderRadius: 12, color: "#34d399", fontWeight: 700, cursor: "pointer", fontSize: 15, fontFamily: "inherit",
-                }}>
-                  {"\u2713"} Got it right
-                </button>
-              </div>
-            )}
+            {/* Rating Buttons */}
+            {flipped && (() => {
+              const previews = getIntervalPreviews(card, scores);
+              const btns = [
+                { g: Grade.AGAIN, label: "Again", sub: previews[Grade.AGAIN], bg: "rgba(239,68,68,0.12)", border: "rgba(239,68,68,0.25)", color: "#f87171" },
+                { g: Grade.HARD, label: "Hard", sub: previews[Grade.HARD], bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.25)", color: "#fbbf24" },
+                { g: Grade.GOOD, label: "Good", sub: previews[Grade.GOOD], bg: "rgba(52,211,153,0.12)", border: "rgba(52,211,153,0.25)", color: "#34d399" },
+                { g: Grade.EASY, label: "Easy", sub: previews[Grade.EASY], bg: "rgba(96,165,250,0.12)", border: "rgba(96,165,250,0.25)", color: "#60a5fa" },
+              ];
+              return (
+                <React.Fragment>
+                  <div style={{ display: "flex", gap: 8, marginTop: 24, flexWrap: "wrap", justifyContent: "center", maxWidth: 560, width: "100%" }}>
+                    {btns.map(b => (
+                      <button key={b.g} onClick={() => markCard(b.g)} style={{
+                        flex: "1 1 calc(25% - 6px)", minWidth: 72, padding: "12px 8px",
+                        background: b.bg, border: "1px solid " + b.border, borderRadius: 10,
+                        color: b.color, cursor: "pointer", fontFamily: "inherit",
+                        display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                      }}>
+                        <span style={{ fontWeight: 700, fontSize: 14 }}>{b.label}</span>
+                        <span style={{ fontSize: 11, opacity: 0.7, fontFamily: "'DM Mono', monospace" }}>{b.sub}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ marginTop: 12, fontSize: 11, color: "#444", fontFamily: "'DM Mono', monospace" }}>
+                    1=Again  2=Hard  Space/3=Good  4=Easy
+                  </div>
+                </React.Fragment>
+              );
+            })()}
 
             {!flipped && (
               <div style={{ marginTop: 20, fontSize: 12, color: "#444" }}>

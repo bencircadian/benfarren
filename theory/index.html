@@ -783,7 +783,7 @@
         persistScores(s);
       };
 
-      const startSession = (catIds) => {
+      const startSession = (catIds, dueOnly) => {
         const selected = CATEGORIES.filter(c => catIds.includes(c.id));
         const allCards = selected.flatMap(c => c.cards.map(card => ({ ...card, catId: c.id, catName: c.name, catColor: c.color })));
         const now = Date.now();
@@ -807,13 +807,23 @@
         learning.sort((a, b) => a.due - b.due);
         dueToday.sort((a, b) => a.due - b.due);
         future.sort((a, b) => a.due - b.due);
-        const ordered = [
-          ...overdue.map(x => x.card),
-          ...learning.map(x => x.card),
-          ...shuffle(newCards),
-          ...dueToday.map(x => x.card),
-          ...future.map(x => x.card),
-        ];
+        let ordered;
+        if (dueOnly) {
+          ordered = [
+            ...overdue.map(x => x.card),
+            ...learning.map(x => x.card),
+            ...dueToday.map(x => x.card),
+          ];
+        } else {
+          ordered = [
+            ...overdue.map(x => x.card),
+            ...learning.map(x => x.card),
+            ...shuffle(newCards),
+            ...dueToday.map(x => x.card),
+            ...future.map(x => x.card),
+          ];
+        }
+        if (ordered.length === 0) { alert("No cards due for review!"); return; }
         setCards(ordered);
         setIdx(0);
         setFlipped(false);
@@ -1428,9 +1438,13 @@
                 </p>
 
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  <button onClick={() => { setSelectedCats(CATEGORIES.map(c => c.id)); startSession(CATEGORIES.map(c => c.id)); }}
+                  <button onClick={() => { setSelectedCats(CATEGORIES.map(c => c.id)); startSession(CATEGORIES.map(c => c.id), true); }}
                     style={{ padding: "10px 20px", background: "linear-gradient(135deg, #ef4444, #f97316)", border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>
-                    Test All ({totalCards} cards)
+                    Test Due ({CATEGORIES.reduce((s, c) => s + getCatStats(c.id).due, 0)})
+                  </button>
+                  <button onClick={() => { setSelectedCats(CATEGORIES.map(c => c.id)); startSession(CATEGORIES.map(c => c.id), false); }}
+                    style={{ padding: "10px 20px", background: "rgba(249,115,22,0.15)", border: "1px solid rgba(249,115,22,0.3)", borderRadius: 10, color: "#f97316", fontWeight: 700, cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>
+                    Test All ({totalCards})
                   </button>
                   <button onClick={() => {
                     const weak = CATEGORIES.filter(c => { const s = getCatStats(c.id); return s.pct !== null && s.pct < 75; });
@@ -1474,24 +1488,35 @@
                         {stats.pct}%
                       </div>
                     )}
-                    <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                    <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
                       <button onClick={() => { setLearnCatId(cat.id); setLearnSubMode("browse"); setExpandedCards(new Set()); setClozeIdx(0); setRevealedBlanks(new Set()); setMode("learn"); }}
                         style={{
-                          padding: "6px 12px", background: "rgba(99,102,241,0.12)",
+                          padding: "5px 10px", background: "rgba(99,102,241,0.12)",
                           border: "1px solid rgba(99,102,241,0.25)", borderRadius: 8,
                           color: "#818cf8", fontWeight: 600, cursor: "pointer",
-                          fontSize: 12, fontFamily: "inherit",
+                          fontSize: 11, fontFamily: "inherit",
                         }}>
                         Learn
                       </button>
-                      <button onClick={() => { setSelectedCats([cat.id]); startSession([cat.id]); }}
+                      {stats.due > 0 && (
+                        <button onClick={() => { setSelectedCats([cat.id]); startSession([cat.id], true); }}
+                          style={{
+                            padding: "5px 10px", background: "rgba(249,115,22,0.12)",
+                            border: "1px solid rgba(249,115,22,0.25)", borderRadius: 8,
+                            color: "#f97316", fontWeight: 600, cursor: "pointer",
+                            fontSize: 11, fontFamily: "inherit",
+                          }}>
+                          Due ({stats.due})
+                        </button>
+                      )}
+                      <button onClick={() => { setSelectedCats([cat.id]); startSession([cat.id], false); }}
                         style={{
-                          padding: "6px 12px", background: "rgba(249,115,22,0.12)",
-                          border: "1px solid rgba(249,115,22,0.25)", borderRadius: 8,
-                          color: "#f97316", fontWeight: 600, cursor: "pointer",
-                          fontSize: 12, fontFamily: "inherit",
+                          padding: "5px 10px", background: "rgba(255,255,255,0.06)",
+                          border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8,
+                          color: "#9a9aaa", fontWeight: 600, cursor: "pointer",
+                          fontSize: 11, fontFamily: "inherit",
                         }}>
-                        Test
+                        All
                       </button>
                     </div>
                   </div>

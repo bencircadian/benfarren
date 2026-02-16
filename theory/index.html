@@ -1593,18 +1593,40 @@
             <button onClick={() => setMode("menu")} style={{ background: "none", border: "none", color: "#6b6b7b", cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>
               {"\u2190"} Save & Exit
             </button>
-            <span style={{ fontSize: 13, color: "#6b6b7b", fontFamily: "'DM Mono', monospace" }}>
-              {idx + 1} / {cards.length}
-            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span style={{ fontSize: 13, color: "#6b6b7b", fontFamily: "'DM Mono', monospace" }}>
+                {idx + 1} / {cards.length}
+              </span>
+              {sessionResults.length > 0 && (() => {
+                const right = sessionResults.filter(r => r.grade >= Grade.HARD).length;
+                const wrong = sessionResults.filter(r => r.grade === Grade.AGAIN).length;
+                return (
+                  <span style={{ fontSize: 12, fontFamily: "'DM Mono', monospace", display: "flex", gap: 6 }}>
+                    <span style={{ color: "#34d399" }}>{"\u2713"}{right}</span>
+                    {wrong > 0 && <span style={{ color: "#f87171" }}>{"\u2717"}{wrong}</span>}
+                  </span>
+                );
+              })()}
+            </div>
             <button onClick={() => { if (sessionResults.length > 0) setMode("results"); else setMode("menu"); }}
               style={{ background: "none", border: "none", color: "#6b6b7b", cursor: "pointer", fontSize: 13, fontFamily: "'DM Mono', monospace" }}>
               Results
             </button>
           </div>
 
-          {/* Progress bar */}
-          <div style={{ height: 3, background: "rgba(255,255,255,0.06)" }}>
-            <div style={{ height: "100%", width: progress + "%", background: card.catColor, transition: "width 0.3s" }} />
+          {/* Progress bar with right/wrong dots */}
+          <div style={{ height: 6, background: "rgba(255,255,255,0.06)", display: "flex" }}>
+            {sessionResults.map((r, i) => (
+              <div key={i} style={{
+                flex: 1, maxWidth: `${100 / cards.length}%`,
+                background: r.grade >= Grade.HARD ? "#34d399" : "#f87171",
+                opacity: 0.7,
+              }} />
+            ))}
+            <div style={{
+              flex: 1, maxWidth: `${100 / cards.length}%`,
+              background: card.catColor, opacity: 0.4,
+            }} />
           </div>
 
           {/* Card */}

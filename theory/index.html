@@ -574,9 +574,10 @@
     }
 
     function extractKeyPhrase(answer) {
-      const firstSentence = answer.split(/[.!]/)[0].trim();
+      // Split on sentence boundaries — period/! followed by space or end, NOT decimal points
+      const firstSentence = answer.split(/(?<!\d)\.\s|(?<!\d)\.$|!\s|!$/)[0].trim();
       if (firstSentence.length <= 80) return firstSentence;
-      const firstClause = answer.split(/[.,;\u2014]/)[0].trim();
+      const firstClause = answer.split(/,\s|;\s|\u2014/)[0].trim();
       if (firstClause.length <= 60) return firstClause;
       return firstSentence.slice(0, 60).replace(/\s+\S*$/, "") + "\u2026";
     }

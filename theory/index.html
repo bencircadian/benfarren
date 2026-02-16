@@ -11,6 +11,11 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #0a0a0f; color: #e8e6e3; font-family: 'DM Sans', 'Segoe UI', system-ui, sans-serif; }
     #root { min-height: 100vh; }
+    .card-flip { perspective: 1200px; width: 100%; max-width: 560px; }
+    .card-flip-inner { display: grid; transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
+    .card-flip-inner.flipped { transform: rotateY(180deg); }
+    .card-face { grid-area: 1 / 1; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 16px; padding: 32px 28px; display: flex; flex-direction: column; justify-content: center; min-height: 280px; }
+    .card-back { transform: rotateY(180deg); }
   </style>
 </head>
 <body>
@@ -1105,15 +1110,12 @@
               {card.catName.toUpperCase()}
             </span>
 
-            <div onClick={() => setFlipped(!flipped)} style={{
-              width: "100%", maxWidth: 560, minHeight: 280, padding: "32px 28px",
-              background: flipped ? card.catColor + "0a" : "rgba(255,255,255,0.04)",
-              border: "1px solid " + (flipped ? card.catColor + "25" : "rgba(255,255,255,0.08)"),
-              borderRadius: 16, cursor: "pointer", transition: "all 0.2s",
-              display: "flex", flexDirection: "column", justifyContent: "center",
-            }}>
-              {!flipped ? (
-                <React.Fragment>
+            <div className="card-flip" onClick={() => { if (!reviewing) setFlipped(!flipped); }} style={{ cursor: reviewing ? "default" : "pointer" }}>
+              <div className={"card-flip-inner" + (flipped ? " flipped" : "")} key={card.catId + ":" + card.q.slice(0, 40)}>
+                <div className="card-face card-front" style={{
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                }}>
                   {card.img && (
                     <div style={{ textAlign: "center", marginBottom: 16 }}>
                       <img src={card.img} alt="Road sign" style={{ maxHeight: 140, maxWidth: 140, filter: "drop-shadow(0 2px 8px rgba(255,255,255,0.1))" }} />
@@ -1125,9 +1127,11 @@
                   <div style={{ fontSize: 13, color: "#555", fontFamily: "'DM Mono', monospace", textAlign: card.img ? "center" : "left" }}>
                     tap to reveal answer
                   </div>
-                </React.Fragment>
-              ) : (
-                <React.Fragment>
+                </div>
+                <div className="card-face card-back" style={{
+                  background: card.catColor + "0a",
+                  border: "1px solid " + card.catColor + "25",
+                }}>
                   {card.img && (
                     <div style={{ textAlign: "center", marginBottom: 12 }}>
                       <img src={card.img} alt="Road sign" style={{ maxHeight: 80, maxWidth: 80, opacity: 0.7 }} />
@@ -1137,8 +1141,8 @@
                   <div style={{ fontSize: 17, lineHeight: 1.6, color: "#c0d0c0" }}>
                     {card.a}
                   </div>
-                </React.Fragment>
-              )}
+                </div>
+              </div>
             </div>
 
             {/* Rating Buttons */}

@@ -581,18 +581,92 @@
       return firstSentence.slice(0, 60).replace(/\s+\S*$/, "") + "\u2026";
     }
 
+    // Generate plausible near-miss distractors
+    function generateDistractors(correctPhrase, card, allCards) {
+      const distractors = [];
+      const used = new Set([correctPhrase.toLowerCase()]);
+      const add = (d) => {
+        const t = d.trim();
+        if (t && !used.has(t.toLowerCase()) && t.toLowerCase() !== correctPhrase.toLowerCase()) {
+          used.add(t.toLowerCase());
+          distractors.push(t);
+        }
+      };
+
+      // Strategy 1: Number swaps — find numbers in the correct phrase and vary them
+      const numMatch = correctPhrase.match(/(\d[\d.,]*)\s*(metres|metre|feet|foot|mph|mm|cm|mg|ml|km|ft|m|points?|years?|months?|days?|hours?|minutes?|seconds?|%)?/i);
+      if (numMatch) {
+        const num = parseFloat(numMatch[1].replace(",", ""));
+        const unit = numMatch[2] || "";
+        const prefix = correctPhrase.slice(0, numMatch.index);
+        const suffix = correctPhrase.slice(numMatch.index + numMatch[0].length);
+        // Generate nearby plausible numbers
+        const variants = [
+          Math.round(num * 0.5), Math.round(num * 0.75), Math.round(num * 1.5),
+          Math.round(num * 2), num + 5, num - 5, num + 10, num - 10,
+          Math.round(num * 1.25), Math.round(num * 0.6),
+        ].filter(v => v > 0 && v !== num);
+        const uniqueNums = [...new Set(variants)];
+        shuffle(uniqueNums).slice(0, 4).forEach(v => {
+          add(prefix + v + (unit ? " " + unit : "") + suffix);
+        });
+      }
+
+      // Strategy 2: Swap key terms to create plausible wrong answers
+      const swaps = [
+        [/\bleft\b/gi, "right"], [/\bright\b/gi, "left"],
+        [/\bincrease/gi, "decrease"], [/\bdecrease/gi, "increase"],
+        [/\bdouble\b/gi, "triple"], [/\btriple\b/gi, "double"],
+        [/\bstop\b/gi, "slow down"], [/\bslow down\b/gi, "stop"],
+        [/\bred\b/gi, "amber"], [/\bamber\b/gi, "red"],
+        [/\bgreen\b/gi, "blue"], [/\bblue\b/gi, "green"],
+        [/\bcircular\b/gi, "triangular"], [/\btriangular\b/gi, "circular"],
+        [/\brectangular\b/gi, "circular"], [/\boctagonal\b/gi, "circular"],
+        [/\bprohibition\b/gi, "warning"], [/\bwarning\b/gi, "information"],
+        [/\b30 mph\b/g, "40 mph"], [/\b40 mph\b/g, "30 mph"],
+        [/\b50 mph\b/g, "60 mph"], [/\b60 mph\b/g, "50 mph"],
+        [/\b70 mph\b/g, "60 mph"],
+        [/\b2 years?\b/gi, "3 years"], [/\b3 years?\b/gi, "2 years"],
+        [/\b12 months?\b/gi, "6 months"], [/\b6 months?\b/gi, "12 months"],
+        [/\b24 hours?\b/gi, "48 hours"], [/\b48 hours?\b/gi, "24 hours"],
+        [/\b7 days?\b/gi, "14 days"], [/\b14 days?\b/gi, "7 days"],
+        [/\b1\.6\s*mm\b/g, "1.2 mm"], [/\b100\s*m/g, "50 m"],
+        [/\bnever\b/gi, "only in emergencies"],
+        [/\bMUST NOT\b/g, "should avoid"], [/\bMUST\b/g, "should"],
+      ];
+      for (const [pat, replacement] of swaps) {
+        if (pat.test(correctPhrase)) {
+          add(correctPhrase.replace(pat, replacement));
+          if (distractors.length >= 5) break;
+        }
+      }
+
+      // Strategy 3: Answers from similar cards as fallback
+      if (distractors.length < 3) {
+        const others = shuffle(allCards.filter(c => c.q !== card.q));
+        for (const c of others) {
+          if (distractors.length >= 5) break;
+          add(extractKeyPhrase(c.a));
+        }
+      }
+
+      return distractors;
+    }
+
     function generateMCQ(card, allCards) {
       const correct = extractKeyPhrase(card.a);
-      const others = shuffle(allCards.filter(c => c.q !== card.q));
-      const distractors = [];
-      for (const c of others) {
-        const phrase = extractKeyPhrase(c.a);
-        if (phrase !== correct && !distractors.includes(phrase)) {
-          distractors.push(phrase);
+      const distractors = generateDistractors(correct, card, allCards);
+      const picked = shuffle(distractors).slice(0, 3);
+      // Pad with fallback if we still don't have 3
+      while (picked.length < 3) {
+        const others = shuffle(allCards.filter(c => c.q !== card.q));
+        for (const c of others) {
+          const p = extractKeyPhrase(c.a);
+          if (p !== correct && !picked.includes(p)) { picked.push(p); break; }
         }
-        if (distractors.length >= 3) break;
+        if (picked.length < 3) break; // safety valve
       }
-      const options = shuffle([correct, ...distractors.slice(0, 3)]);
+      const options = shuffle([correct, ...picked.slice(0, 3)]);
       return { question: card.q, img: card.img, options, correctIndex: options.indexOf(correct), fullAnswer: card.a };
     }
 

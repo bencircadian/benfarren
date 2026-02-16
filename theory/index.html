@@ -605,6 +605,7 @@
       const [cards, setCards] = useState([]);
       const [idx, setIdx] = useState(0);
       const [flipped, setFlipped] = useState(false);
+      const [reviewing, setReviewing] = useState(false);
       const [scores, setScores] = useState(loadScores);
       const [sessionResults, setSessionResults] = useState([]);
 
@@ -700,14 +701,38 @@
         if (idx < cards.length - 1) {
           setIdx(idx + 1);
           setFlipped(false);
+          setReviewing(false);
         } else {
           setMode("results");
+        }
+      };
+
+      const goBack = () => {
+        if (idx > 0) {
+          setIdx(idx - 1);
+          setFlipped(true);
+          setReviewing(true);
+        }
+      };
+
+      const goForward = () => {
+        if (reviewing && idx < sessionResults.length - 1) {
+          setIdx(idx + 1);
+          setFlipped(true);
+          setReviewing(true);
+        } else if (reviewing) {
+          setIdx(sessionResults.length);
+          setFlipped(false);
+          setReviewing(false);
         }
       };
 
       useEffect(() => {
         const handleKey = (e) => {
           if (mode !== "study") return;
+          if (e.key === "ArrowLeft") { e.preventDefault(); goBack(); return; }
+          if (e.key === "ArrowRight" && reviewing) { e.preventDefault(); goForward(); return; }
+          if (reviewing) return;
           if (e.code === "Space") {
             e.preventDefault();
             if (!flipped) { setFlipped(true); } else { markCard(Grade.GOOD); }
@@ -721,7 +746,7 @@
         };
         window.addEventListener("keydown", handleKey);
         return () => window.removeEventListener("keydown", handleKey);
-      }, [mode, flipped, cards, idx, scores, sessionResults]);
+      }, [mode, flipped, cards, idx, scores, sessionResults, reviewing]);
 
       const totalCards = CATEGORIES.reduce((s, c) => s + c.cards.length, 0);
       const totalRight = Object.values(scores).reduce((s, v) => s + v.right, 0);
@@ -1117,7 +1142,7 @@
             </div>
 
             {/* Rating Buttons */}
-            {flipped && (() => {
+            {flipped && !reviewing && (() => {
               const previews = getIntervalPreviews(card, scores);
               const btns = [
                 { g: Grade.AGAIN, label: "Again", sub: previews[Grade.AGAIN], bg: "rgba(239,68,68,0.12)", border: "rgba(239,68,68,0.25)", color: "#f87171" },
@@ -1147,7 +1172,30 @@
               );
             })()}
 
-            {!flipped && (
+            {/* Reviewing mode controls */}
+            {reviewing && (
+              <div style={{ display: "flex", gap: 12, marginTop: 24, alignItems: "center", justifyContent: "center" }}>
+                <button onClick={goBack} disabled={idx <= 0} style={{
+                  padding: "10px 20px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: 10, color: idx > 0 ? "#e0e0ef" : "#333", cursor: idx > 0 ? "pointer" : "default", fontFamily: "inherit", fontSize: 14
+                }}>{"\u2190"} Prev</button>
+                <span style={{ fontSize: 11, color: "#666", fontFamily: "'DM Mono', monospace", padding: "0 8px" }}>Reviewing</span>
+                <button onClick={goForward} style={{
+                  padding: "10px 20px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: 10, color: "#e0e0ef", cursor: "pointer", fontFamily: "inherit", fontSize: 14
+                }}>{idx < sessionResults.length - 1 ? "Next \u2192" : "Resume \u2192"}</button>
+              </div>
+            )}
+
+            {/* Back button when not reviewing */}
+            {!reviewing && idx > 0 && (
+              <button onClick={goBack} style={{
+                marginTop: 16, padding: "8px 16px", background: "none", border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 8, color: "#6b6b7b", cursor: "pointer", fontFamily: "'DM Mono', monospace", fontSize: 11
+              }}>{"\u2190"} Previous card</button>
+            )}
+
+            {!flipped && !reviewing && (
               <div style={{ marginTop: 20, fontSize: 12, color: "#444" }}>
                 Tap the card or press Space to flip
               </div>

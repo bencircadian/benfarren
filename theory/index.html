@@ -528,6 +528,74 @@
       return a;
     }
 
+    // ── Learning Mode Utilities ──
+
+    function generateClozes(text) {
+      const blanks = []; // { start, end, text }
+      const patterns = [
+        // Numbers with units
+        /(\d[\d.,]*)\s*(metres|metre|feet|foot|mph|mm|cm|mg|ml|%|km|points?|years?|months?|days?|hours?|minutes?|seconds?|times?|ft|m)\b/gi,
+        // Standalone significant numbers (2+ digits)
+        /\b(\d{2,}[\d.,]*)\b/g,
+        // ALLCAPS emphasis words (2+ chars, possibly multi-word)
+        /\b([A-Z]{2,}(?:\s+[A-Z]{2,})*)\b/g,
+      ];
+
+      for (const pat of patterns) {
+        let match;
+        const regex = new RegExp(pat.source, pat.flags);
+        while ((match = regex.exec(text)) !== null) {
+          const start = match.index;
+          const end = start + match[0].length;
+          // Skip if overlaps with existing blank
+          const overlaps = blanks.some(b => start < b.end && end > b.start);
+          if (!overlaps) {
+            blanks.push({ start, end, text: match[0] });
+          }
+        }
+      }
+
+      if (blanks.length === 0) return [{ text, blanked: false }];
+
+      // Sort by position and limit to 5
+      blanks.sort((a, b) => a.start - b.start);
+      const limited = blanks.slice(0, 5);
+
+      // Build segments
+      const segments = [];
+      let cursor = 0;
+      for (const b of limited) {
+        if (b.start > cursor) segments.push({ text: text.slice(cursor, b.start), blanked: false });
+        segments.push({ text: b.text, blanked: true });
+        cursor = b.end;
+      }
+      if (cursor < text.length) segments.push({ text: text.slice(cursor), blanked: false });
+      return segments;
+    }
+
+    function extractKeyPhrase(answer) {
+      const firstSentence = answer.split(/[.!]/)[0].trim();
+      if (firstSentence.length <= 80) return firstSentence;
+      const firstClause = answer.split(/[.,;\u2014]/)[0].trim();
+      if (firstClause.length <= 60) return firstClause;
+      return firstSentence.slice(0, 60).replace(/\s+\S*$/, "") + "\u2026";
+    }
+
+    function generateMCQ(card, allCards) {
+      const correct = extractKeyPhrase(card.a);
+      const others = shuffle(allCards.filter(c => c.q !== card.q));
+      const distractors = [];
+      for (const c of others) {
+        const phrase = extractKeyPhrase(c.a);
+        if (phrase !== correct && !distractors.includes(phrase)) {
+          distractors.push(phrase);
+        }
+        if (distractors.length >= 3) break;
+      }
+      const options = shuffle([correct, ...distractors.slice(0, 3)]);
+      return { question: card.q, img: card.img, options, correctIndex: options.indexOf(correct), fullAnswer: card.a };
+    }
+
     const STORAGE_KEY = "theory-flashcard-scores";
 
     function migrateScore(old) {
@@ -613,6 +681,17 @@
       const [reviewing, setReviewing] = useState(false);
       const [scores, setScores] = useState(loadScores);
       const [sessionResults, setSessionResults] = useState([]);
+
+      // Learn mode state
+      const [learnCatId, setLearnCatId] = useState(null);
+      const [learnSubMode, setLearnSubMode] = useState("browse");
+      const [expandedCards, setExpandedCards] = useState(new Set());
+      const [clozeIdx, setClozeIdx] = useState(0);
+      const [revealedBlanks, setRevealedBlanks] = useState(new Set());
+      const [mcqIdx, setMcqIdx] = useState(0);
+      const [mcqSelected, setMcqSelected] = useState(null);
+      const [mcqQuestions, setMcqQuestions] = useState([]);
+      const [mcqScore, setMcqScore] = useState({ correct: 0, total: 0 });
 
       useEffect(() => {
         fetchRemoteScores().then(remote => {
@@ -927,6 +1006,337 @@
         );
       }
 
+      if (mode === "learn") {
+        const cat = CATEGORIES.find(c => c.id === learnCatId);
+        if (!cat) { setMode("menu"); return null; }
+
+        const learnTabs = [
+          { id: "browse", label: "Browse" },
+          { id: "cloze", label: "Fill Blanks" },
+          { id: "mcq", label: "Quiz" },
+        ];
+
+        // Generate MCQs on first enter or category change
+        const initMcq = () => {
+          const qs = shuffle(cat.cards).map(card => generateMCQ(card, cat.cards));
+          setMcqQuestions(qs);
+          setMcqIdx(0);
+          setMcqSelected(null);
+          setMcqScore({ correct: 0, total: 0 });
+        };
+
+        return (
+          <div style={{ minHeight: "100vh", background: "#0a0a0f", color: "#e8e6e3" }}>
+            {/* Top bar */}
+            <div style={{ padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <button onClick={() => setMode("menu")} style={{ background: "none", border: "none", color: "#6b6b7b", cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>
+                {"\u2190"} Topics
+              </button>
+              <span style={{ fontSize: 15, fontWeight: 600, color: cat.color }}>{cat.name}</span>
+              <span style={{ fontSize: 12, color: "#555", fontFamily: "'DM Mono', monospace" }}>{cat.cards.length} cards</span>
+            </div>
+
+            {/* Tab bar */}
+            <div style={{ display: "flex", borderBottom: "1px solid rgba(255,255,255,0.06)", maxWidth: 680, margin: "0 auto", padding: "0 24px" }}>
+              {learnTabs.map(tab => (
+                <button key={tab.id} onClick={() => {
+                  setLearnSubMode(tab.id);
+                  if (tab.id === "mcq" && mcqQuestions.length === 0) initMcq();
+                  if (tab.id === "cloze") { setClozeIdx(0); setRevealedBlanks(new Set()); }
+                }} style={{
+                  flex: 1, padding: "14px 8px", background: "none", border: "none",
+                  borderBottom: learnSubMode === tab.id ? ("2px solid " + cat.color) : "2px solid transparent",
+                  color: learnSubMode === tab.id ? "#e0e0ef" : "#6b6b7b",
+                  fontWeight: learnSubMode === tab.id ? 700 : 500,
+                  fontSize: 13, cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s",
+                }}>
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Content */}
+            <div style={{ maxWidth: 680, margin: "0 auto", padding: "16px 24px 60px" }}>
+
+              {/* ── BROWSE ── */}
+              {learnSubMode === "browse" && (
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                    <span style={{ fontSize: 12, color: "#555", fontFamily: "'DM Mono', monospace" }}>{cat.cards.length} questions</span>
+                    <button onClick={() => {
+                      if (expandedCards.size === cat.cards.length) setExpandedCards(new Set());
+                      else setExpandedCards(new Set(cat.cards.map((_, i) => i)));
+                    }} style={{
+                      background: "none", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 6,
+                      padding: "4px 10px", color: "#6b6b7b", fontSize: 11, cursor: "pointer", fontFamily: "'DM Mono', monospace",
+                    }}>
+                      {expandedCards.size === cat.cards.length ? "Collapse All" : "Expand All"}
+                    </button>
+                  </div>
+                  {cat.cards.map((card, i) => {
+                    const isExpanded = expandedCards.has(i);
+                    return (
+                      <div key={i} onClick={() => {
+                        const next = new Set(expandedCards);
+                        isExpanded ? next.delete(i) : next.add(i);
+                        setExpandedCards(next);
+                      }} style={{
+                        margin: "6px 0", padding: "14px 16px",
+                        background: isExpanded ? (cat.color + "0a") : "rgba(255,255,255,0.03)",
+                        border: "1px solid " + (isExpanded ? cat.color + "25" : "rgba(255,255,255,0.06)"),
+                        borderRadius: 10, cursor: "pointer", transition: "all 0.2s",
+                      }}>
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                          <span style={{ color: "#555", fontSize: 12, fontFamily: "'DM Mono', monospace", flexShrink: 0, marginTop: 2 }}>{i + 1}.</span>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 14, fontWeight: 600, color: "#d0d0e0", lineHeight: 1.5 }}>
+                              {card.q.replace(/ \[Sign .+\]$/, "")}
+                            </div>
+                            {isExpanded && (
+                              <div style={{ marginTop: 10, fontSize: 14, color: "#9a9aaa", lineHeight: 1.6, borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 10 }}>
+                                {card.img && <img src={card.img} alt="Sign" style={{ maxHeight: 100, marginBottom: 8, display: "block", filter: "drop-shadow(0 2px 8px rgba(255,255,255,0.1))" }} />}
+                                {card.a}
+                              </div>
+                            )}
+                          </div>
+                          <span style={{ color: "#444", fontSize: 12, transform: isExpanded ? "rotate(90deg)" : "none", transition: "transform 0.2s", flexShrink: 0, marginTop: 4 }}>
+                            {"\u25B6"}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* ── CLOZE ── */}
+              {learnSubMode === "cloze" && (() => {
+                const card = cat.cards[clozeIdx];
+                if (!card) return null;
+                const segments = generateClozes(card.a);
+                const totalBlanks = segments.filter(s => s.blanked).length;
+                const allRevealed = revealedBlanks.size >= totalBlanks;
+
+                return (
+                  <div>
+                    {/* Progress */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                      <span style={{ fontSize: 12, color: "#555", fontFamily: "'DM Mono', monospace" }}>Card {clozeIdx + 1} of {cat.cards.length}</span>
+                      <span style={{ fontSize: 11, color: "#444", fontFamily: "'DM Mono', monospace" }}>Tap blanks to reveal</span>
+                    </div>
+
+                    {/* Question */}
+                    <div style={{
+                      padding: "20px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                      borderRadius: 12, marginBottom: 16,
+                    }}>
+                      {card.img && (
+                        <div style={{ textAlign: "center", marginBottom: 12 }}>
+                          <img src={card.img} alt="Sign" style={{ maxHeight: 120, filter: "drop-shadow(0 2px 8px rgba(255,255,255,0.1))" }} />
+                        </div>
+                      )}
+                      <div style={{ fontSize: 17, fontWeight: 600, color: "#e0e0ef", lineHeight: 1.5 }}>
+                        {card.q.replace(/ \[Sign .+\]$/, "")}
+                      </div>
+                    </div>
+
+                    {/* Answer with blanks */}
+                    <div style={{
+                      padding: "20px", background: cat.color + "08", border: "1px solid " + cat.color + "20",
+                      borderRadius: 12, marginBottom: 16, fontSize: 16, lineHeight: 2, color: "#b0b0c0",
+                    }}>
+                      {segments.map((seg, i) => {
+                        if (!seg.blanked) return <span key={i}>{seg.text}</span>;
+                        const revealed = revealedBlanks.has(i);
+                        return (
+                          <span key={i} onClick={(e) => { e.stopPropagation(); setRevealedBlanks(new Set([...revealedBlanks, i])); }}
+                            style={{
+                              display: "inline-block", padding: "2px 10px", margin: "2px 4px",
+                              borderRadius: 6, cursor: revealed ? "default" : "pointer",
+                              background: revealed ? "rgba(52,211,153,0.15)" : "rgba(249,115,22,0.2)",
+                              border: "1px solid " + (revealed ? "rgba(52,211,153,0.3)" : "rgba(249,115,22,0.4)"),
+                              color: revealed ? "#34d399" : "#f97316",
+                              fontWeight: 600, fontSize: 14, fontFamily: "'DM Mono', monospace",
+                              transition: "all 0.25s",
+                              minWidth: revealed ? "auto" : Math.max(50, seg.text.length * 7),
+                            }}>
+                            {revealed ? seg.text : "???"}
+                          </span>
+                        );
+                      })}
+                    </div>
+
+                    {/* Controls */}
+                    <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+                      <button onClick={() => { setClozeIdx(Math.max(0, clozeIdx - 1)); setRevealedBlanks(new Set()); }}
+                        disabled={clozeIdx <= 0}
+                        style={{
+                          padding: "10px 20px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+                          borderRadius: 10, color: clozeIdx > 0 ? "#e0e0ef" : "#333", cursor: clozeIdx > 0 ? "pointer" : "default", fontFamily: "inherit", fontSize: 14,
+                        }}>{"\u2190"} Prev</button>
+                      {!allRevealed && (
+                        <button onClick={() => {
+                          const all = new Set();
+                          segments.forEach((s, i) => { if (s.blanked) all.add(i); });
+                          setRevealedBlanks(all);
+                        }} style={{
+                          padding: "10px 20px", background: "rgba(249,115,22,0.12)", border: "1px solid rgba(249,115,22,0.25)",
+                          borderRadius: 10, color: "#f97316", cursor: "pointer", fontFamily: "inherit", fontSize: 14,
+                        }}>Reveal All</button>
+                      )}
+                      <button onClick={() => { setClozeIdx(Math.min(cat.cards.length - 1, clozeIdx + 1)); setRevealedBlanks(new Set()); }}
+                        disabled={clozeIdx >= cat.cards.length - 1}
+                        style={{
+                          padding: "10px 20px", background: allRevealed ? "rgba(52,211,153,0.12)" : "rgba(255,255,255,0.06)",
+                          border: "1px solid " + (allRevealed ? "rgba(52,211,153,0.25)" : "rgba(255,255,255,0.1)"),
+                          borderRadius: 10, color: clozeIdx < cat.cards.length - 1 ? (allRevealed ? "#34d399" : "#e0e0ef") : "#333",
+                          cursor: clozeIdx < cat.cards.length - 1 ? "pointer" : "default", fontFamily: "inherit", fontSize: 14,
+                        }}>Next {"\u2192"}</button>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* ── MCQ ── */}
+              {learnSubMode === "mcq" && (() => {
+                if (mcqQuestions.length === 0) {
+                  initMcq();
+                  return <div style={{ textAlign: "center", padding: 40, color: "#555" }}>Loading...</div>;
+                }
+
+                // End screen
+                if (mcqIdx >= mcqQuestions.length) {
+                  const pct = mcqScore.total > 0 ? Math.round((mcqScore.correct / mcqScore.total) * 100) : 0;
+                  return (
+                    <div style={{ textAlign: "center", padding: "40px 0" }}>
+                      <div style={{
+                        fontSize: 48, fontWeight: 700, marginBottom: 8,
+                        color: pct >= 86 ? "#34d399" : pct >= 60 ? "#fbbf24" : "#f87171",
+                      }}>{pct}%</div>
+                      <div style={{ fontSize: 18, color: "#d0d0e0", marginBottom: 4 }}>
+                        {mcqScore.correct} / {mcqScore.total} correct
+                      </div>
+                      <p style={{ color: "#6b6b7b", fontSize: 14, marginBottom: 24 }}>
+                        {pct >= 86 ? "Excellent! You know this topic well." : pct >= 60 ? "Good effort — review the ones you missed." : "Keep studying — try Browse or Fill Blanks first."}
+                      </p>
+                      <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                        <button onClick={initMcq} style={{
+                          padding: "10px 24px", background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.25)",
+                          borderRadius: 10, color: "#818cf8", fontWeight: 600, cursor: "pointer", fontSize: 14, fontFamily: "inherit",
+                        }}>Retry Quiz</button>
+                        <button onClick={() => setLearnSubMode("browse")} style={{
+                          padding: "10px 24px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+                          borderRadius: 10, color: "#e0e0ef", cursor: "pointer", fontSize: 14, fontFamily: "inherit",
+                        }}>Browse Answers</button>
+                      </div>
+                    </div>
+                  );
+                }
+
+                const mcq = mcqQuestions[mcqIdx];
+
+                return (
+                  <div>
+                    {/* Score + progress */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                      <span style={{ fontSize: 12, color: "#555", fontFamily: "'DM Mono', monospace" }}>
+                        Question {mcqIdx + 1} of {mcqQuestions.length}
+                      </span>
+                      {mcqScore.total > 0 && (
+                        <span style={{ fontSize: 12, fontFamily: "'DM Mono', monospace", color: "#818cf8" }}>
+                          {mcqScore.correct}/{mcqScore.total} correct
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Question */}
+                    <div style={{
+                      padding: "20px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                      borderRadius: 12, marginBottom: 16,
+                    }}>
+                      {mcq.img && (
+                        <div style={{ textAlign: "center", marginBottom: 12 }}>
+                          <img src={mcq.img} alt="Sign" style={{ maxHeight: 120, filter: "drop-shadow(0 2px 8px rgba(255,255,255,0.1))" }} />
+                        </div>
+                      )}
+                      <div style={{ fontSize: 17, fontWeight: 600, color: "#e0e0ef", lineHeight: 1.5 }}>
+                        {mcq.question.replace(/ \[Sign .+\]$/, "")}
+                      </div>
+                    </div>
+
+                    {/* Options */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+                      {mcq.options.map((opt, i) => {
+                        const isCorrect = i === mcq.correctIndex;
+                        const isSelected = i === mcqSelected;
+                        const answered = mcqSelected !== null;
+
+                        let bg = "rgba(255,255,255,0.04)";
+                        let border = "rgba(255,255,255,0.08)";
+                        let color = "#d0d0e0";
+
+                        if (answered) {
+                          if (isCorrect) { bg = "rgba(52,211,153,0.12)"; border = "rgba(52,211,153,0.3)"; color = "#34d399"; }
+                          else if (isSelected) { bg = "rgba(239,68,68,0.12)"; border = "rgba(239,68,68,0.3)"; color = "#f87171"; }
+                          else { bg = "rgba(255,255,255,0.02)"; border = "rgba(255,255,255,0.04)"; color = "#555"; }
+                        }
+
+                        return (
+                          <button key={i} onClick={() => {
+                            if (answered) return;
+                            setMcqSelected(i);
+                            setMcqScore({
+                              correct: mcqScore.correct + (isCorrect ? 1 : 0),
+                              total: mcqScore.total + 1,
+                            });
+                          }} style={{
+                            padding: "14px 16px", background: bg, border: "1px solid " + border,
+                            borderRadius: 10, color, cursor: answered ? "default" : "pointer",
+                            fontSize: 14, textAlign: "left", fontFamily: "inherit", lineHeight: 1.5,
+                            transition: "all 0.2s", display: "flex", alignItems: "flex-start", gap: 10,
+                          }}>
+                            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, opacity: 0.5, flexShrink: 0, marginTop: 2 }}>
+                              {String.fromCharCode(65 + i)}.
+                            </span>
+                            <span>{opt}</span>
+                            {answered && isCorrect && <span style={{ marginLeft: "auto", flexShrink: 0 }}>{"\u2713"}</span>}
+                            {answered && isSelected && !isCorrect && <span style={{ marginLeft: "auto", flexShrink: 0 }}>{"\u2717"}</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Full answer after selection */}
+                    {mcqSelected !== null && (
+                      <div style={{
+                        padding: "16px", background: cat.color + "08", border: "1px solid " + cat.color + "20",
+                        borderRadius: 10, marginBottom: 16, fontSize: 13, lineHeight: 1.6, color: "#9a9aaa",
+                      }}>
+                        <div style={{ fontSize: 11, color: "#666", fontFamily: "'DM Mono', monospace", marginBottom: 6 }}>FULL ANSWER</div>
+                        {mcq.fullAnswer}
+                      </div>
+                    )}
+
+                    {/* Next button */}
+                    {mcqSelected !== null && (
+                      <div style={{ textAlign: "center" }}>
+                        <button onClick={() => { setMcqIdx(mcqIdx + 1); setMcqSelected(null); }}
+                          style={{
+                            padding: "12px 32px", background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.25)",
+                            borderRadius: 10, color: "#818cf8", fontWeight: 600, cursor: "pointer", fontSize: 14, fontFamily: "inherit",
+                          }}>
+                          {mcqIdx < mcqQuestions.length - 1 ? "Next Question \u2192" : "See Results \u2192"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        );
+      }
+
       if (mode === "menu") {
         return (
           <div style={{ minHeight: "100vh", background: "#0a0a0f", color: "#e8e6e3" }}>
@@ -945,7 +1355,7 @@
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   <button onClick={() => { setSelectedCats(CATEGORIES.map(c => c.id)); startSession(CATEGORIES.map(c => c.id)); }}
                     style={{ padding: "10px 20px", background: "linear-gradient(135deg, #ef4444, #f97316)", border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>
-                    Study All ({totalCards} cards)
+                    Test All ({totalCards} cards)
                   </button>
                   <button onClick={() => {
                     const weak = CATEGORIES.filter(c => { const s = getCatStats(c.id); return s.pct !== null && s.pct < 75; });
@@ -966,14 +1376,13 @@
               {CATEGORIES.map(cat => {
                 const stats = getCatStats(cat.id);
                 return (
-                  <div key={cat.id} onClick={() => { setSelectedCats([cat.id]); startSession([cat.id]); }}
-                    style={{
+                  <div key={cat.id} style={{
                       margin: "8px 0", padding: "14px 16px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)",
-                      borderRadius: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 14, transition: "all 0.15s",
+                      borderRadius: 12, display: "flex", alignItems: "center", gap: 14, transition: "all 0.15s",
                     }}>
                     <div style={{ width: 8, height: 40, borderRadius: 4, background: cat.color, flexShrink: 0 }} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 15, fontWeight: 600, color: "#d0d0e0" }}>{cat.name}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 15, fontWeight: 600, color: "#d0d0e0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cat.name}</div>
                       <div style={{ fontSize: 12, color: "#6b6b7b", marginTop: 2, fontFamily: "'DM Mono', monospace" }}>
                         {cat.cards.length} cards
                         {stats.pct !== null && (" | " + stats.pct + "%")}
@@ -982,15 +1391,34 @@
                     </div>
                     {stats.pct !== null && (
                       <div style={{
-                        width: 44, height: 44, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                        width: 40, height: 40, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
                         background: stats.pct >= 80 ? "rgba(52,211,153,0.12)" : stats.pct >= 60 ? "rgba(251,191,36,0.12)" : "rgba(239,68,68,0.12)",
                         color: stats.pct >= 80 ? "#34d399" : stats.pct >= 60 ? "#fbbf24" : "#f87171",
-                        fontSize: 13, fontWeight: 700, fontFamily: "'DM Mono', monospace",
+                        fontSize: 12, fontWeight: 700, fontFamily: "'DM Mono', monospace", flexShrink: 0,
                       }}>
                         {stats.pct}%
                       </div>
                     )}
-                    <span style={{ color: "#444", fontSize: 18 }}>{"\u2192"}</span>
+                    <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                      <button onClick={() => { setLearnCatId(cat.id); setLearnSubMode("browse"); setExpandedCards(new Set()); setClozeIdx(0); setRevealedBlanks(new Set()); setMode("learn"); }}
+                        style={{
+                          padding: "6px 12px", background: "rgba(99,102,241,0.12)",
+                          border: "1px solid rgba(99,102,241,0.25)", borderRadius: 8,
+                          color: "#818cf8", fontWeight: 600, cursor: "pointer",
+                          fontSize: 12, fontFamily: "inherit",
+                        }}>
+                        Learn
+                      </button>
+                      <button onClick={() => { setSelectedCats([cat.id]); startSession([cat.id]); }}
+                        style={{
+                          padding: "6px 12px", background: "rgba(249,115,22,0.12)",
+                          border: "1px solid rgba(249,115,22,0.25)", borderRadius: 8,
+                          color: "#f97316", fontWeight: 600, cursor: "pointer",
+                          fontSize: 12, fontFamily: "inherit",
+                        }}>
+                        Test
+                      </button>
+                    </div>
                   </div>
                 );
               })}

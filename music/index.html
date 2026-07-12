@@ -97,7 +97,7 @@
   <main id="app" class="max-w-5xl mx-auto px-6 py-10"></main>
 
   <footer class="max-w-5xl mx-auto px-6 py-10 text-center text-xs text-chalk-dim/60 font-mono">
-    Progress is saved locally in your browser.
+    Progress syncs automatically, so it carries across devices and browsers.
   </footer>
 
 <script>
@@ -289,7 +289,7 @@ const ACCENT = {
   violet: { text: 'text-violet', border: 'border-violet/40', bg: 'bg-violet/10', ring: 'ring-violet' },
 };
 
-/* ============================== PROGRESS (localStorage) ============================== */
+/* ============================== PROGRESS (DB-backed, localStorage cache) ============================== */
 
 const STORAGE_KEY = 'musicQuizProgress:v1';
 
@@ -297,6 +297,17 @@ function loadProgress() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
   catch { return {}; }
 }
+
+function persistProgress(p) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); } catch {}
+  // Fire-and-forget sync to server so progress carries across devices/browsers.
+  fetch('/api/music-progress', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(p),
+  }).catch(() => {});
+}
+
 function saveProgress(moduleId, data) {
   const p = loadProgress();
   const prev = p[moduleId] || { attempts: 0, bestPercent: 0 };
@@ -305,9 +316,45 @@ function saveProgress(moduleId, data) {
     attempts: prev.attempts + 1,
     bestPercent: Math.max(prev.bestPercent || 0, data.bestPercent ?? 0),
     mastered: (prev.mastered || false) || (data.bestPercent ?? 0) >= 85,
+    updatedAt: Date.now(),
   };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
+  persistProgress(p);
   return p[moduleId];
+}
+
+async function fetchRemoteProgress() {
+  try {
+    const res = await fetch('/api/music-progress');
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data && typeof data === 'object' && !data.error ? data : null;
+  } catch { return null; }
+}
+
+function mergeProgress(local, remote) {
+  if (!remote) return local;
+  const merged = { ...local };
+  for (const key of Object.keys(remote)) {
+    if (!merged[key]) { merged[key] = remote[key]; continue; }
+    const a = merged[key], b = remote[key];
+    merged[key] = {
+      attempts: Math.max(a.attempts || 0, b.attempts || 0),
+      bestPercent: Math.max(a.bestPercent || 0, b.bestPercent || 0),
+      mastered: !!(a.mastered || b.mastered),
+      lastScore: (b.updatedAt || 0) > (a.updatedAt || 0) ? b.lastScore : a.lastScore,
+      lastTotal: (b.updatedAt || 0) > (a.updatedAt || 0) ? b.lastTotal : a.lastTotal,
+      updatedAt: Math.max(a.updatedAt || 0, b.updatedAt || 0),
+    };
+  }
+  return merged;
+}
+
+async function syncProgressFromServer() {
+  const remote = await fetchRemoteProgress();
+  if (!remote) return;
+  const merged = mergeProgress(loadProgress(), remote);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+  if (state.view === 'home') render();
 }
 
 /* ============================== APP STATE ============================== */
@@ -719,6 +766,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 render();
+syncProgressFromServer();
 </script>
 </body>
 </html>

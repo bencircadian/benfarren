@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Key Signatures — Ben Farren</title>
+<meta name="description" content="A structured quiz program for memorising key signatures by number of sharps and flats, with mnemonics for the order of sharps and flats."/>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+<link rel="canonical" href="https://benfarren.co.uk/music"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          "noir": "#0a0a0b",
+          "noir-light": "#141416",
+          "noir-lighter": "#1c1c1f",
+          "chalk": "#f5f5f0",
+          "chalk-dim": "#a3a39e",
+          "amber": "#f59e0b",
+          "amber-dim": "#d97706",
+          "teal": "#14b8a6",
+          "violet": "#8b5cf6",
+        },
+        fontFamily: {
+          "display": ["Lora", "Georgia", "serif"],
+          "body": ["Outfit", "system-ui", "sans-serif"],
+          "mono": ["JetBrains Mono", "monospace"],
+        },
+      },
+    },
+  }
+</script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { background: #0a0a0b; }
+  ::selection { background: #f59e0b; color: #0a0a0b; }
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: #0a0a0b; }
+  ::-webkit-scrollbar-thumb { background: #2a2a2d; border-radius: 4px; }
+
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; font-size: 20px; line-height: 1; vertical-align: middle; }
+
+  @keyframes shakeX {
+    10%, 90% { transform: translateX(-2px); }
+    20%, 80% { transform: translateX(3px); }
+    30%, 50%, 70% { transform: translateX(-5px); }
+    40%, 60% { transform: translateX(5px); }
+  }
+  .shake { animation: shakeX 0.4s; }
+
+  @keyframes popIn {
+    0% { opacity: 0; transform: translateY(8px) scale(0.98); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .pop-in { animation: popIn 0.35s ease-out; }
+
+  @keyframes flashGreen {
+    0% { background-color: rgba(20,184,166,0.35); }
+    100% { background-color: transparent; }
+  }
+  .flash-correct { animation: flashGreen 0.6s ease-out; }
+
+  .option-btn { transition: border-color .15s ease, background-color .15s ease, transform .1s ease; }
+  .option-btn:active { transform: scale(0.98); }
+  .option-btn.correct { border-color: #14b8a6 !important; background-color: rgba(20,184,166,0.12) !important; }
+  .option-btn.wrong { border-color: #ef4444 !important; background-color: rgba(239,68,68,0.12) !important; }
+  .option-btn.dim { opacity: 0.45; }
+
+  .note-btn { transition: all .15s ease; }
+  .note-btn.used { opacity: 0.25; pointer-events: none; }
+  .note-btn.wrong-flash { border-color: #ef4444 !important; background-color: rgba(239,68,68,0.18) !important; }
+
+  .progress-fill { transition: width .4s ease; }
+
+  .mnemonic-word { transition: color .2s ease, opacity .2s ease; }
+</style>
+</head>
+<body class="bg-noir text-chalk font-body min-h-screen">
+
+  <header class="border-b border-chalk/10">
+    <div class="max-w-5xl mx-auto px-6 py-5 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2 text-chalk-dim hover:text-chalk transition-colors text-sm">
+        <span class="material-symbols-outlined" style="font-size:18px">arrow_back</span>
+        <span>Ben Farren</span>
+      </a>
+      <div class="flex items-center gap-2 text-amber">
+        <span class="material-symbols-outlined">music_note</span>
+        <span class="font-display font-semibold tracking-wide">Key Signatures</span>
+      </div>
+    </div>
+  </header>
+
+  <main id="app" class="max-w-5xl mx-auto px-6 py-10"></main>
+
+  <footer class="max-w-5xl mx-auto px-6 py-10 text-center text-xs text-chalk-dim/60 font-mono">
+    Progress is saved locally in your browser.
+  </footer>
+
+<script>
+"use strict";
+
+/* ============================== DATA ============================== */
+
+const SHARPS_ORDER = ['F','C','G','D','A','E','B'];
+const FLATS_ORDER  = ['B','E','A','D','G','C','F'];
+
+const SHARPS_MNEMONIC = ['Father','Charles','Goes','Down','And','Ends','Battle'];
+const FLATS_MNEMONIC  = ['Battle','Ends','And','Down','Goes',"Charles'",'Father'];
+
+const MAJOR_SHARPS = [
+  {n:0,key:'C'},{n:1,key:'G'},{n:2,key:'D'},{n:3,key:'A'},
+  {n:4,key:'E'},{n:5,key:'B'},{n:6,key:'F♯'},{n:7,key:'C♯'},
+];
+const MAJOR_FLATS = [
+  {n:0,key:'C'},{n:1,key:'F'},{n:2,key:'B♭'},{n:3,key:'E♭'},
+  {n:4,key:'A♭'},{n:5,key:'D♭'},{n:6,key:'G♭'},{n:7,key:'C♭'},
+];
+const MINOR_SHARPS = [
+  {n:0,key:'A'},{n:1,key:'E'},{n:2,key:'B'},{n:3,key:'F♯'},
+  {n:4,key:'C♯'},{n:5,key:'G♯'},{n:6,key:'D♯'},{n:7,key:'A♯'},
+];
+const MINOR_FLATS = [
+  {n:0,key:'A'},{n:1,key:'D'},{n:2,key:'G'},{n:3,key:'C'},
+  {n:4,key:'F'},{n:5,key:'B♭'},{n:6,key:'E♭'},{n:7,key:'A♭'},
+];
+
+const MAJOR_ALL = [
+  {key:'C', n:0, label:'no sharps or flats'},
+  ...MAJOR_SHARPS.slice(1).map(x => ({key:x.key, n:x.n, label:`${x.n} sharp${x.n===1?'':'s'}`})),
+  ...MAJOR_FLATS.slice(1).map(x => ({key:x.key, n:x.n, label:`${x.n} flat${x.n===1?'':'s'}`})),
+];
+
+const CIRCLE_12 = [
+  {label:'C',    sub:'0',   color:'#f5f5f0'},
+  {label:'G',    sub:'1♯',  color:'#f59e0b'},
+  {label:'D',    sub:'2♯',  color:'#f59e0b'},
+  {label:'A',    sub:'3♯',  color:'#f59e0b'},
+  {label:'E',    sub:'4♯',  color:'#f59e0b'},
+  {label:'B',    sub:'5♯',  color:'#f59e0b'},
+  {label:'F♯/G♭',sub:'6',   color:'#8b5cf6'},
+  {label:'D♭',   sub:'5♭',  color:'#14b8a6'},
+  {label:'A♭',   sub:'4♭',  color:'#14b8a6'},
+  {label:'E♭',   sub:'3♭',  color:'#14b8a6'},
+  {label:'B♭',   sub:'2♭',  color:'#14b8a6'},
+  {label:'F',    sub:'1♭',  color:'#14b8a6'},
+];
+
+/* ============================== HELPERS ============================== */
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function sample(arr, count) { return shuffle(arr).slice(0, count); }
+function formatKey(key, mode) { return `${key} ${mode}`; }
+
+function buildOptions(correct, distractorPool, count = 4) {
+  const uniquePool = Array.from(new Set(distractorPool.filter(d => d !== correct)));
+  const distractors = sample(uniquePool, count - 1);
+  return shuffle([correct, ...distractors]);
+}
+
+function keyTrickForSharps(c, key) {
+  if (c === 0) return `No sharps — C major has no accidentals.`;
+  const last = SHARPS_ORDER[c - 1];
+  return `Trick: the last sharp is ${last}♯ — go up a semitone to land on ${key}.`;
+}
+function keyTrickForFlats(c, key) {
+  if (c === 0) return `No flats — C major has no accidentals.`;
+  if (c === 1) return `Special case: 1 flat is always F major.`;
+  const second = FLATS_ORDER[c - 2];
+  return `Trick: the second-to-last flat is ${second}♭ — that names the key: ${key}.`;
+}
+function minorTrick(c, key, majorList) {
+  const majorEquivalent = majorList.find(x => x.n === c).key;
+  return `${key} minor is the relative minor of ${majorEquivalent} major — a minor third below it.`;
+}
+
+/* ============================== QUESTION GENERATORS ============================== */
+
+function genCountToKeyQuestions(list, keyword, mode, total, trickFn) {
+  const counts = list.map(x => x.n);
+  let sequence = [];
+  while (sequence.length < total) sequence = sequence.concat(shuffle(counts));
+  sequence = sequence.slice(0, total);
+
+  return sequence.map(c => {
+    const item = list.find(x => x.n === c);
+    const correct = formatKey(item.key, mode);
+    let nearItems = list.filter(x => x.n !== c && Math.abs(x.n - c) <= 2);
+    if (nearItems.length < 3) nearItems = list.filter(x => x.n !== c);
+    const distractorPool = nearItems.map(x => formatKey(x.key, mode));
+    const options = buildOptions(correct, distractorPool, 4);
+    const countText = c === 0 ? `no ${keyword}s` : `${c} ${keyword}${c === 1 ? '' : 's'}`;
+    const explanation = trickFn
+      ? `${correct} has ${countText}. ${trickFn(c, item.key)}`
+      : `${correct} has ${countText}.`;
+    return {
+      prompt: `Which ${mode} key has ${countText}?`,
+      options, correct, explanation,
+    };
+  });
+}
+
+function genReverseMajorQuestions(total) {
+  let sequence = [];
+  while (sequence.length < total) sequence = sequence.concat(shuffle(MAJOR_ALL));
+  sequence = sequence.slice(0, total);
+
+  return sequence.map(item => {
+    const correct = item.label;
+    const pool = MAJOR_ALL.filter(x => x.key !== item.key).map(x => x.label);
+    const options = buildOptions(correct, pool, 4);
+    return {
+      prompt: `How many sharps or flats does ${item.key} major have?`,
+      options, correct,
+      explanation: `${item.key} major has ${correct}.`,
+    };
+  });
+}
+
+function genMixedReview() {
+  const parts = [
+    ...genCountToKeyQuestions(MAJOR_SHARPS, 'sharp', 'major', 5, keyTrickForSharps),
+    ...genCountToKeyQuestions(MAJOR_FLATS,  'flat',  'major', 5, keyTrickForFlats),
+    ...genCountToKeyQuestions(MINOR_SHARPS, 'sharp', 'minor', 4, (c,k) => minorTrick(c,k,MAJOR_SHARPS)),
+    ...genCountToKeyQuestions(MINOR_FLATS,  'flat',  'minor', 4, (c,k) => minorTrick(c,k,MAJOR_FLATS)),
+    ...genReverseMajorQuestions(6),
+  ];
+  return shuffle(parts);
+}
+
+/* ============================== MODULES ============================== */
+
+const MODULES = [
+  {
+    id: 'order', num: 1, type: 'order', accent: 'amber', icon: 'format_list_numbered',
+    title: 'The Order', subtitle: 'Learn the mnemonics for sharps & flats',
+  },
+  {
+    id: 'sharps-major', num: 2, type: 'mcq', accent: 'amber', icon: 'trending_up',
+    title: 'Sharps → Major Keys', subtitle: 'Given a number of sharps, name the major key',
+    hint: `Sharps order: F C G D A E B (Father Charles Goes Down And Ends Battle). Trick: last sharp + a semitone up = the major key.`,
+    gen: () => genCountToKeyQuestions(MAJOR_SHARPS, 'sharp', 'major', 12, keyTrickForSharps),
+  },
+  {
+    id: 'flats-major', num: 3, type: 'mcq', accent: 'teal', icon: 'trending_down',
+    title: 'Flats → Major Keys', subtitle: 'Given a number of flats, name the major key',
+    hint: `Flats order: B E A D G C F (Battle Ends And Down Goes Charles' Father). Trick: second-to-last flat = the major key (1 flat is always F).`,
+    gen: () => genCountToKeyQuestions(MAJOR_FLATS, 'flat', 'major', 12, keyTrickForFlats),
+  },
+  {
+    id: 'key-to-count', num: 4, type: 'mcq', accent: 'violet', icon: 'swap_horiz',
+    title: 'Major Key → Count', subtitle: 'Reverse recall: name the sharps/flats for a given key',
+    hint: `Think in reverse: place the key on the circle of fifths and count how many steps it is from C.`,
+    gen: () => genReverseMajorQuestions(12),
+  },
+  {
+    id: 'sharps-minor', num: 5, type: 'mcq', accent: 'amber', icon: 'trending_up',
+    title: 'Sharps → Minor Keys', subtitle: 'Given a number of sharps, name the relative minor key',
+    hint: `Relative minor = a minor third (3 semitones) below the major key with the same number of sharps.`,
+    gen: () => genCountToKeyQuestions(MINOR_SHARPS, 'sharp', 'minor', 12, (c,k) => minorTrick(c,k,MAJOR_SHARPS)),
+  },
+  {
+    id: 'flats-minor', num: 6, type: 'mcq', accent: 'teal', icon: 'trending_down',
+    title: 'Flats → Minor Keys', subtitle: 'Given a number of flats, name the relative minor key',
+    hint: `Relative minor = a minor third (3 semitones) below the major key with the same number of flats.`,
+    gen: () => genCountToKeyQuestions(MINOR_FLATS, 'flat', 'minor', 12, (c,k) => minorTrick(c,k,MAJOR_FLATS)),
+  },
+  {
+    id: 'mixed', num: 7, type: 'mcq', accent: 'violet', icon: 'military_tech',
+    title: 'Mixed Master Review', subtitle: 'Everything combined — the real test',
+    hint: `Use whichever trick fits: sharps → last sharp + semitone; flats → second-to-last flat; minor → minor third below its relative major.`,
+    gen: () => genMixedReview(),
+  },
+];
+
+const ACCENT = {
+  amber:  { text: 'text-amber',  border: 'border-amber/40',  bg: 'bg-amber/10',  ring: 'ring-amber' },
+  teal:   { text: 'text-teal',   border: 'border-teal/40',   bg: 'bg-teal/10',   ring: 'ring-teal' },
+  violet: { text: 'text-violet', border: 'border-violet/40', bg: 'bg-violet/10', ring: 'ring-violet' },
+};
+
+/* ============================== PROGRESS (localStorage) ============================== */
+
+const STORAGE_KEY = 'musicQuizProgress:v1';
+
+function loadProgress() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+  catch { return {}; }
+}
+function saveProgress(moduleId, data) {
+  const p = loadProgress();
+  const prev = p[moduleId] || { attempts: 0, bestPercent: 0 };
+  p[moduleId] = {
+    ...prev, ...data,
+    attempts: prev.attempts + 1,
+    bestPercent: Math.max(prev.bestPercent || 0, data.bestPercent ?? 0),
+    mastered: (prev.mastered || false) || (data.bestPercent ?? 0) >= 85,
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
+  return p[moduleId];
+}
+
+/* ============================== APP STATE ============================== */
+
+let state = { view: 'home' };
+const root = document.getElementById('app');
+
+function goHome() { state = { view: 'home' }; render(); }
+
+function startModule(id) {
+  const mod = MODULES.find(m => m.id === id);
+  if (mod.type === 'order') {
+    state = {
+      view: 'quiz', module: mod,
+      order: {
+        stage: 'sharps',
+        position: 0,
+        mistakesSharps: 0,
+        mistakesFlats: 0,
+        buttons: shuffle(SHARPS_ORDER),
+        built: [],
+      },
+    };
+  } else {
+    state = {
+      view: 'quiz', module: mod,
+      questions: mod.gen(),
+      qIndex: 0, score: 0, mistakes: [],
+      answered: false, selected: null, showHint: false,
+    };
+  }
+  render();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ============================== RENDER: HOME ============================== */
+
+function renderCircleSVG() {
+  const cx = 150, cy = 150, r = 118;
+  let items = '';
+  CIRCLE_12.forEach((k, i) => {
+    const angle = (-90 + i * 30) * Math.PI / 180;
+    const x = cx + r * Math.cos(angle);
+    const y = cy + r * Math.sin(angle);
+    items += `
+      <text x="${x}" y="${y - 4}" text-anchor="middle" font-size="15" font-weight="600" fill="${k.color}" font-family="Outfit, sans-serif">${k.label}</text>
+      <text x="${x}" y="${y + 13}" text-anchor="middle" font-size="10" fill="${k.color}" opacity="0.75" font-family="JetBrains Mono, monospace">${k.sub}</text>
+    `;
+  });
+  return `
+  <svg viewBox="0 0 300 300" class="w-full max-w-[280px] mx-auto">
+    <circle cx="150" cy="150" r="95" fill="none" stroke="#2a2a2d" stroke-width="1" stroke-dasharray="2 4"/>
+    <text x="150" y="150" text-anchor="middle" dominant-baseline="middle" font-size="10" fill="#a3a39e" font-family="JetBrains Mono, monospace">5ths</text>
+    ${items}
+  </svg>`;
+}
+
+function moduleStatusBadge(mod, progress) {
+  const p = progress[mod.id];
+  if (!p) return `<span class="text-[11px] font-mono text-chalk-dim/60">Not started</span>`;
+  if (p.mastered) return `<span class="text-[11px] font-mono text-teal flex items-center gap-1"><span class="material-symbols-outlined" style="font-size:14px">verified</span>Mastered · ${Math.round(p.bestPercent)}%</span>`;
+  return `<span class="text-[11px] font-mono text-amber">Best: ${Math.round(p.bestPercent)}%</span>`;
+}
+
+function renderHome() {
+  const progress = loadProgress();
+  const masteredCount = MODULES.filter(m => progress[m.id]?.mastered).length;
+
+  const moduleCards = MODULES.map(mod => {
+    const a = ACCENT[mod.accent];
+    const p = progress[mod.id];
+    const label = p ? (p.mastered ? 'Review' : 'Continue') : 'Start';
+    return `
+    <div class="border ${a.border} bg-noir-light rounded-xl p-5 flex flex-col gap-3">
+      <div class="flex items-start justify-between">
+        <div class="flex items-center gap-2">
+          <span class="font-mono text-xs text-chalk-dim/50">0${mod.num}</span>
+          <span class="material-symbols-outlined ${a.text}">${mod.icon}</span>
+        </div>
+        ${moduleStatusBadge(mod, progress)}
+      </div>
+      <div>
+        <h3 class="font-display text-lg font-semibold">${mod.title}</h3>
+        <p class="text-sm text-chalk-dim mt-1">${mod.subtitle}</p>
+      </div>
+      <button data-action="start-module" data-id="${mod.id}" class="mt-auto self-start px-4 py-2 rounded-lg border ${a.border} ${a.text} text-sm font-medium hover:${a.bg} transition-colors flex items-center gap-1.5">
+        ${label} <span class="material-symbols-outlined" style="font-size:16px">arrow_forward</span>
+      </button>
+    </div>`;
+  }).join('');
+
+  root.innerHTML = `
+  <section class="pop-in mb-12">
+    <p class="font-mono text-xs text-teal tracking-widest uppercase mb-3">A Structured Program</p>
+    <h1 class="font-display text-4xl md:text-5xl font-semibold leading-tight">Memorise every key signature.</h1>
+    <p class="text-chalk-dim mt-4 max-w-2xl">Seven modules, building from the mnemonics for the order of sharps and flats through to a mixed mastery review of every major and minor key. Progress is tracked per module — aim for 85%+ to mark it mastered.</p>
+    <div class="mt-6 flex items-center gap-3">
+      <div class="flex-1 max-w-xs h-2 bg-noir-lighter rounded-full overflow-hidden">
+        <div class="h-full bg-gradient-to-r from-amber to-teal progress-fill" style="width:${(masteredCount / MODULES.length) * 100}%"></div>
+      </div>
+      <span class="font-mono text-xs text-chalk-dim">${masteredCount} / ${MODULES.length} mastered</span>
+    </div>
+  </section>
+
+  <section class="pop-in mb-14 border border-chalk/10 bg-noir-light rounded-2xl p-6 md:p-8 grid md:grid-cols-2 gap-8">
+    <div>
+      <h2 class="font-display text-xl font-semibold mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined text-amber">lightbulb</span> Quick reference
+      </h2>
+
+      <div class="mb-5">
+        <p class="text-xs font-mono uppercase tracking-wide text-amber mb-1">Order of sharps</p>
+        <p class="font-mono text-lg">${SHARPS_ORDER.join(' – ')}</p>
+        <p class="text-sm text-chalk-dim italic mt-1">"${SHARPS_MNEMONIC.join(' ')}"</p>
+      </div>
+
+      <div class="mb-5">
+        <p class="text-xs font-mono uppercase tracking-wide text-teal mb-1">Order of flats</p>
+        <p class="font-mono text-lg">${FLATS_ORDER.join(' – ')}</p>
+        <p class="text-sm text-chalk-dim italic mt-1">"${FLATS_MNEMONIC.join(' ')}"</p>
+        <p class="text-xs text-chalk-dim/70 mt-1">(the reverse of the sharps sentence)</p>
+      </div>
+
+      <ul class="space-y-2 text-sm text-chalk-dim">
+        <li class="flex gap-2"><span class="material-symbols-outlined text-amber" style="font-size:16px">chevron_right</span><span><strong class="text-chalk">Sharps trick:</strong> the major key is a semitone above the last sharp. E.g. sharps up to G♯ → key of A major.</span></li>
+        <li class="flex gap-2"><span class="material-symbols-outlined text-teal" style="font-size:16px">chevron_right</span><span><strong class="text-chalk">Flats trick:</strong> the major key is the second-to-last flat. E.g. B♭ E♭ A♭ D♭ → key of A♭ major. (1 flat is always F.)</span></li>
+        <li class="flex gap-2"><span class="material-symbols-outlined text-violet" style="font-size:16px">chevron_right</span><span><strong class="text-chalk">Relative minor:</strong> a minor third below the major key with the same accidentals — same key signature, different home note.</span></li>
+      </ul>
+    </div>
+    <div class="flex flex-col items-center justify-center">
+      ${renderCircleSVG()}
+      <p class="text-xs text-chalk-dim/60 mt-2 text-center">Circle of fifths — clockwise adds a sharp, counter-clockwise adds a flat.</p>
+    </div>
+  </section>
+
+  <section class="pop-in">
+    <h2 class="font-display text-2xl font-semibold mb-6">Your program</h2>
+    <div class="grid md:grid-cols-2 gap-5">${moduleCards}</div>
+  </section>
+  `;
+}
+
+/* ============================== RENDER: ORDER DRILL ============================== */
+
+function renderOrderQuiz() {
+  const mod = state.module;
+  const o = state.order;
+  const target = o.stage === 'sharps' ? SHARPS_ORDER : FLATS_ORDER;
+  const mnemonic = o.stage === 'sharps' ? SHARPS_MNEMONIC : FLATS_MNEMONIC;
+  const stageColor = o.stage === 'sharps' ? 'amber' : 'teal';
+  const a = ACCENT[stageColor];
+
+  const mnemonicHtml = mnemonic.map((w, i) => {
+    const done = i < o.position;
+    const current = i === o.position;
+    return `<span class="mnemonic-word ${done ? a.text + ' font-semibold' : current ? 'text-chalk font-semibold underline decoration-2 decoration-' + stageColor : 'text-chalk-dim/50'}">${w}</span>`;
+  }).join(' ');
+
+  const buttonsHtml = o.buttons.map(note => {
+    const used = o.built.includes(note);
+    return `<button data-action="order-note" data-note="${note}" class="note-btn ${used ? 'used' : ''} w-14 h-14 rounded-xl border ${a.border} font-mono text-xl font-semibold ${a.text} hover:${a.bg}" ${used ? 'disabled' : ''}>${note}</button>`;
+  }).join('');
+
+  const builtHtml = o.built.length
+    ? `<div class="flex flex-wrap gap-2 justify-center">${o.built.map(n => `<span class="px-3 py-1 rounded-full ${a.bg} ${a.text} font-mono text-sm">${n}</span>`).join('')}</div>`
+    : `<p class="text-sm text-chalk-dim/50">Click the notes in order, starting from the first ${o.stage === 'sharps' ? 'sharp' : 'flat'}.</p>`;
+
+  root.innerHTML = `
+  <div class="pop-in max-w-2xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+      <button data-action="go-home" class="text-chalk-dim hover:text-chalk text-sm flex items-center gap-1"><span class="material-symbols-outlined" style="font-size:18px">close</span> Exit</button>
+      <span class="font-mono text-xs text-chalk-dim">Stage: ${o.stage === 'sharps' ? '1 of 2 — Sharps' : '2 of 2 — Flats'}</span>
+    </div>
+
+    <h1 class="font-display text-2xl font-semibold mb-1">${mod.title}</h1>
+    <p class="text-chalk-dim text-sm mb-8">Build the order of ${o.stage} by clicking each note in sequence.</p>
+
+    <div class="border ${a.border} bg-noir-light rounded-2xl p-8 text-center">
+      <p class="text-lg md:text-xl leading-relaxed mb-8">${mnemonicHtml}</p>
+
+      <div class="flex flex-wrap gap-3 justify-center mb-8">${buttonsHtml}</div>
+
+      <div class="mb-2 font-mono text-xs text-chalk-dim">${o.position} / 7 placed · ${(o.stage === 'sharps' ? o.mistakesSharps : o.mistakesFlats)} mistake${(o.stage === 'sharps' ? o.mistakesSharps : o.mistakesFlats) === 1 ? '' : 's'}</div>
+      ${builtHtml}
+    </div>
+  </div>`;
+}
+
+function handleOrderNote(note) {
+  const o = state.order;
+  const target = o.stage === 'sharps' ? SHARPS_ORDER : FLATS_ORDER;
+  const expected = target[o.position];
+
+  if (note === expected) {
+    o.built.push(note);
+    o.position++;
+    if (o.position === 7) {
+      if (o.stage === 'sharps') {
+        o.stage = 'flats';
+        o.position = 0;
+        o.built = [];
+        o.buttons = shuffle(FLATS_ORDER);
+        render();
+      } else {
+        finishOrderDrill();
+      }
+      return;
+    }
+    render();
+  } else {
+    const btn = document.querySelector(`[data-action="order-note"][data-note="${CSS.escape(note)}"]`);
+    if (btn) {
+      btn.classList.add('wrong-flash', 'shake');
+      setTimeout(() => btn.classList.remove('wrong-flash', 'shake'), 400);
+    }
+    if (o.stage === 'sharps') o.mistakesSharps++; else o.mistakesFlats++;
+    render();
+  }
+}
+
+function finishOrderDrill() {
+  const o = state.order;
+  const totalMistakes = o.mistakesSharps + o.mistakesFlats;
+  const accuracy = Math.round((14 / (14 + totalMistakes)) * 100);
+  const saved = saveProgress('order', { bestPercent: accuracy });
+  state = {
+    view: 'result', module: state.module, isOrder: true,
+    totalMistakes, accuracy, saved,
+  };
+  render();
+}
+
+/* ============================== RENDER: MCQ QUIZ ============================== */
+
+function renderMcqQuiz() {
+  const mod = state.module;
+  const q = state.questions[state.qIndex];
+  const a = ACCENT[mod.accent];
+  const total = state.questions.length;
+
+  const optionsHtml = q.options.map((opt, i) => {
+    let cls = `option-btn w-full text-left px-5 py-3.5 rounded-xl border border-chalk/15 bg-noir-light hover:border-chalk/30`;
+    if (state.answered) {
+      if (opt === q.correct) cls += ' correct';
+      else if (opt === state.selected) cls += ' wrong';
+      else cls += ' dim';
+    }
+    return `<button data-action="select-option" data-index="${i}" class="${cls}" ${state.answered ? 'disabled' : ''}>
+      <span class="font-mono text-xs text-chalk-dim/50 mr-2">${i + 1}</span>${opt}
+    </button>`;
+  }).join('');
+
+  root.innerHTML = `
+  <div class="pop-in max-w-2xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+      <button data-action="go-home" class="text-chalk-dim hover:text-chalk text-sm flex items-center gap-1"><span class="material-symbols-outlined" style="font-size:18px">close</span> Exit</button>
+      <span class="font-mono text-xs text-chalk-dim">Question ${state.qIndex + 1} / ${total} · Score ${state.score}</span>
+    </div>
+
+    <div class="flex items-center gap-2 mb-2">
+      <span class="material-symbols-outlined ${a.text}">${mod.icon}</span>
+      <h1 class="font-display text-xl font-semibold">${mod.title}</h1>
+      <button data-action="toggle-hint" class="ml-auto text-xs font-mono text-chalk-dim hover:text-chalk flex items-center gap-1 border border-chalk/15 rounded-full px-2.5 py-1">
+        <span class="material-symbols-outlined" style="font-size:14px">lightbulb</span> Hint
+      </button>
+    </div>
+
+    <div class="h-1.5 bg-noir-lighter rounded-full overflow-hidden mb-6">
+      <div class="h-full ${a.text.replace('text-','bg-')} progress-fill" style="width:${((state.qIndex) / total) * 100}%"></div>
+    </div>
+
+    ${state.showHint ? `<div class="mb-5 p-4 rounded-xl border ${a.border} ${a.bg} text-sm text-chalk-dim">${mod.hint}</div>` : ''}
+
+    <div class="border border-chalk/10 bg-noir-light rounded-2xl p-6 md:p-8">
+      <p class="font-display text-xl md:text-2xl mb-6">${q.prompt}</p>
+      <div class="space-y-3">${optionsHtml}</div>
+
+      ${state.answered ? `
+        <div class="mt-6 p-4 rounded-xl border ${state.selected === q.correct ? 'border-teal/40 bg-teal/10' : 'border-red-500/40 bg-red-500/10'}">
+          <p class="text-sm flex items-start gap-2">
+            <span class="material-symbols-outlined ${state.selected === q.correct ? 'text-teal' : 'text-red-400'}" style="font-size:18px">${state.selected === q.correct ? 'check_circle' : 'cancel'}</span>
+            <span>${q.explanation}</span>
+          </p>
+          <button data-action="next-question" class="mt-4 px-5 py-2 rounded-lg bg-chalk text-noir font-medium text-sm hover:bg-chalk/90 transition-colors flex items-center gap-1.5">
+            ${state.qIndex + 1 === total ? 'See results' : 'Next question'} <span class="material-symbols-outlined" style="font-size:16px">arrow_forward</span>
+          </button>
+        </div>` : ''}
+    </div>
+  </div>`;
+}
+
+function selectOption(index) {
+  if (state.answered) return;
+  const q = state.questions[state.qIndex];
+  const selected = q.options[index];
+  state.answered = true;
+  state.selected = selected;
+  state.showHint = false;
+  if (selected === q.correct) state.score++;
+  else state.mistakes.push({ prompt: q.prompt, correct: q.correct, yours: selected });
+  render();
+}
+
+function nextQuestion() {
+  if (state.qIndex + 1 === state.questions.length) {
+    finishMcqQuiz();
+  } else {
+    state.qIndex++;
+    state.answered = false;
+    state.selected = null;
+    render();
+  }
+}
+
+function finishMcqQuiz() {
+  const total = state.questions.length;
+  const percent = Math.round((state.score / total) * 100);
+  const saved = saveProgress(state.module.id, { bestPercent: percent, lastScore: state.score, lastTotal: total });
+  state = {
+    view: 'result', module: state.module, isOrder: false,
+    score: state.score, total, percent, mistakes: state.mistakes, saved,
+  };
+  render();
+}
+
+/* ============================== RENDER: RESULT ============================== */
+
+function renderResult() {
+  const mod = state.module;
+  const a = ACCENT[mod.accent];
+
+  if (state.isOrder) {
+    const justMastered = state.accuracy >= 85;
+    root.innerHTML = `
+    <div class="pop-in max-w-xl mx-auto text-center">
+      <span class="material-symbols-outlined ${a.text}" style="font-size:48px">${justMastered ? 'military_tech' : 'refresh'}</span>
+      <h1 class="font-display text-3xl font-semibold mt-4 mb-2">${mod.title} complete</h1>
+      <p class="text-chalk-dim mb-1">${state.totalMistakes} mistake${state.totalMistakes === 1 ? '' : 's'} across both sequences</p>
+      <p class="font-mono text-4xl font-semibold ${a.text} my-6">${state.accuracy}%</p>
+      ${justMastered ? `<p class="text-teal text-sm mb-6">Mastered — nice recall.</p>` : `<p class="text-chalk-dim text-sm mb-6">Aim for 85%+ to mark this module mastered. Try again to reinforce the sequence.</p>`}
+      <div class="flex gap-3 justify-center">
+        <button data-action="retry-module" data-id="${mod.id}" class="px-5 py-2.5 rounded-lg border ${a.border} ${a.text} text-sm font-medium hover:${a.bg}">Practice again</button>
+        <button data-action="go-home" class="px-5 py-2.5 rounded-lg bg-chalk text-noir text-sm font-medium hover:bg-chalk/90">Back to program</button>
+      </div>
+    </div>`;
+    return;
+  }
+
+  const justMastered = state.percent >= 85;
+  const mistakesHtml = state.mistakes.length ? `
+    <div class="mt-8 text-left">
+      <p class="text-xs font-mono uppercase tracking-wide text-chalk-dim mb-3">Review your mistakes</p>
+      <div class="space-y-2">
+        ${state.mistakes.map(m => `
+          <div class="border border-chalk/10 bg-noir-light rounded-lg px-4 py-3 text-sm">
+            <p class="text-chalk-dim mb-1">${m.prompt}</p>
+            <p><span class="text-red-400">${m.yours}</span> <span class="text-chalk-dim/50">→</span> <span class="text-teal">${m.correct}</span></p>
+          </div>`).join('')}
+      </div>
+    </div>` : `<p class="text-teal text-sm mt-6">Perfect score — no mistakes to review.</p>`;
+
+  root.innerHTML = `
+  <div class="pop-in max-w-xl mx-auto text-center">
+    <span class="material-symbols-outlined ${a.text}" style="font-size:48px">${justMastered ? 'military_tech' : 'refresh'}</span>
+    <h1 class="font-display text-3xl font-semibold mt-4 mb-2">${mod.title} complete</h1>
+    <p class="text-chalk-dim mb-1">${state.score} / ${state.total} correct</p>
+    <p class="font-mono text-4xl font-semibold ${a.text} my-6">${state.percent}%</p>
+    ${justMastered ? `<p class="text-teal text-sm mb-2">Mastered — nice work.</p>` : `<p class="text-chalk-dim text-sm mb-2">Aim for 85%+ to mark this module mastered.</p>`}
+    <div class="flex gap-3 justify-center mt-4">
+      <button data-action="retry-module" data-id="${mod.id}" class="px-5 py-2.5 rounded-lg border ${a.border} ${a.text} text-sm font-medium hover:${a.bg}">Try again</button>
+      <button data-action="go-home" class="px-5 py-2.5 rounded-lg bg-chalk text-noir text-sm font-medium hover:bg-chalk/90">Back to program</button>
+    </div>
+    ${mistakesHtml}
+  </div>`;
+}
+
+/* ============================== ROUTER ============================== */
+
+function render() {
+  if (state.view === 'home') renderHome();
+  else if (state.view === 'quiz' && state.module.type === 'order') renderOrderQuiz();
+  else if (state.view === 'quiz') renderMcqQuiz();
+  else if (state.view === 'result') renderResult();
+}
+
+document.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-action]');
+  if (!el) return;
+  const action = el.dataset.action;
+  if (action === 'start-module') startModule(el.dataset.id);
+  else if (action === 'retry-module') startModule(el.dataset.id);
+  else if (action === 'go-home') goHome();
+  else if (action === 'order-note') handleOrderNote(el.dataset.note);
+  else if (action === 'select-option') selectOption(Number(el.dataset.index));
+  else if (action === 'next-question') nextQuestion();
+  else if (action === 'toggle-hint') { state.showHint = !state.showHint; render(); }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (state.view !== 'quiz' || state.module.type !== 'mcq') return;
+  if (!state.answered && ['1','2','3','4'].includes(e.key)) {
+    const idx = Number(e.key) - 1;
+    const q = state.questions[state.qIndex];
+    if (idx < q.options.length) selectOption(idx);
+  } else if (state.answered && (e.key === 'Enter' || e.key === ' ')) {
+    e.preventDefault();
+    nextQuestion();
+  }
+});
+
+render();
+</script>
+</body>
+</html>

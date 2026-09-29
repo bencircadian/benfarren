@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thoughts — Ben Farren</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <meta name="description" content="What's really on my mind." />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,500&family=Outfit:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      background: #0a0a0b;
+      color: #f5f5f0;
+      font-family: 'Outfit', system-ui, sans-serif;
+      overflow: hidden;
+    }
+    .sky {
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse at 50% 110%, rgba(245, 158, 11, 0.12), transparent 60%),
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px) 0 0 / 32px 32px,
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px) 0 0 / 32px 32px;
+    }
+    header {
+      position: fixed; top: 0; left: 0; right: 0;
+      padding: 24px 16px 0;
+      text-align: center;
+      z-index: 2;
+      pointer-events: none;
+    }
+    header a {
+      pointer-events: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase;
+      color: #a3a39e; text-decoration: none;
+    }
+    header a:hover { color: #f59e0b; }
+    h1 {
+      font-family: 'Lora', Georgia, serif;
+      font-style: italic; font-weight: 500;
+      font-size: clamp(28px, 5vw, 44px);
+      margin-top: 12px;
+    }
+    header p { color: #a3a39e; margin-top: 4px; font-size: 15px; }
+
+    .thinker {
+      position: fixed; left: 50%; bottom: 24px;
+      transform: translateX(-50%);
+      font-size: 56px; line-height: 1;
+      z-index: 2;
+      user-select: none;
+    }
+
+    .bubble {
+      position: absolute; top: 0; left: 0;
+      z-index: 1;
+      will-change: transform;
+      cursor: default;
+      user-select: none;
+    }
+    .cloud {
+      position: relative;
+      display: flex; align-items: center; gap: 10px;
+      padding: 18px 26px;
+      background: #f5f5f0;
+      color: #0a0a0b;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: clamp(15px, 2.2vw, 20px);
+      white-space: nowrap;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.45), inset 0 -4px 0 var(--accent);
+      transition: transform 0.25s ease;
+    }
+    /* puffs that give the pill its cloudy outline */
+    .cloud::before, .cloud::after {
+      content: ""; position: absolute; z-index: -1;
+      background: #f5f5f0; border-radius: 50%;
+    }
+    .cloud::before { width: 46%; height: 120%; left: 12%; top: -32%; }
+    .cloud::after  { width: 36%; height: 100%; right: 10%; top: -22%; }
+    .cloud .emoji { font-size: 1.4em; line-height: 1; }
+    .bubble:hover .cloud { transform: scale(1.12) rotate(-2deg); }
+
+    /* the little "thinking" dots trailing off each bubble */
+    .dot {
+      position: absolute; background: #f5f5f0; border-radius: 50%;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    .dot.d1 { width: 16px; height: 16px; left: 22px; bottom: -22px; }
+    .dot.d2 { width: 9px; height: 9px; left: 10px; bottom: -38px; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .cloud { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sky"></div>
+
+  <header>
+    <a href="/">&larr; benfarren.co.uk</a>
+    <h1>What I'm actually thinking about</h1>
+    <p>(it's takeaways)</p>
+  </header>
+
+  <div class="thinker" aria-hidden="true">🤔</div>
+
+  <main id="thoughts" aria-label="Favourite takeaways"></main>
+
+  <script>
+    const TAKEAWAYS = [
+      { name: "Papa John's",  emoji: "🍕", accent: "#c8102e" },
+      { name: "Burger King",  emoji: "🍔", accent: "#f5821f" },
+      { name: "Oowee",        emoji: "🤤", accent: "#f59e0b" },
+      { name: "Super Pizza",  emoji: "🍕", accent: "#14b8a6" },
+      { name: "Chinese",      emoji: "🥡", accent: "#d4a017" },
+    ];
+
+    const stage = document.getElementById("thoughts");
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const PAD = 16, TOP = 175, BOTTOM = 110;
+
+    const bubbles = TAKEAWAYS.map((t, i) => {
+      const el = document.createElement("div");
+      el.className = "bubble";
+      el.style.setProperty("--accent", t.accent);
+      el.innerHTML =
+        `<div class="cloud"><span class="emoji">${t.emoji}</span><span>${t.name}</span></div>` +
+        `<span class="dot d1"></span><span class="dot d2"></span>`;
+      stage.appendChild(el);
+
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 0.25 + Math.random() * 0.35;
+      return {
+        el, w: 0, h: 0, x: 0, y: 0,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        phase: Math.random() * Math.PI * 2,
+        index: i,
+        hovered: false,
+      };
+    });
+
+    function bounds() {
+      return { minY: TOP, maxX: window.innerWidth - PAD, maxY: window.innerHeight - BOTTOM };
+    }
+
+    function measureAndPlace() {
+      const b = bounds();
+      const cols = Math.min(bubbles.length, Math.max(1, Math.floor(window.innerWidth / 260)));
+      const rows = Math.ceil(bubbles.length / cols);
+      bubbles.forEach((bub, i) => {
+        bub.w = bub.el.offsetWidth;
+        bub.h = bub.el.offsetHeight + 40; // include trailing dots
+        // start spread out on a loose grid so they don't pile up
+        const col = i % cols, row = Math.floor(i / cols);
+        const cellW = (b.maxX - PAD) / cols, cellH = (b.maxY - b.minY) / rows;
+        bub.x = PAD + col * cellW + Math.random() * Math.max(0, cellW - bub.w);
+        bub.y = b.minY + row * cellH + Math.random() * Math.max(0, cellH - bub.h);
+        clamp(bub, b);
+      });
+    }
+
+    function clamp(bub, b) {
+      bub.x = Math.min(Math.max(bub.x, PAD), Math.max(PAD, b.maxX - bub.w));
+      bub.y = Math.min(Math.max(bub.y, b.minY), Math.max(b.minY, b.maxY - bub.h));
+    }
+
+    function render(t) {
+      bubbles.forEach(bub => {
+        const bob = reduceMotion ? 0 : Math.sin(t / 900 + bub.phase) * 6;
+        bub.el.style.transform = `translate(${bub.x}px, ${bub.y + bob}px)`;
+      });
+    }
+
+    function step(t) {
+      const b = bounds();
+      bubbles.forEach(bub => {
+        if (bub.hovered) return;
+        bub.x += bub.vx;
+        bub.y += bub.vy;
+        if (bub.x <= PAD || bub.x + bub.w >= b.maxX) bub.vx *= -1;
+        if (bub.y <= b.minY || bub.y + bub.h >= b.maxY) bub.vy *= -1;
+        clamp(bub, b);
+      });
+      render(t);
+      requestAnimationFrame(step);
+    }
+
+    bubbles.forEach(bub => {
+      bub.el.addEventListener("mouseenter", () => bub.hovered = true);
+      bub.el.addEventListener("mouseleave", () => bub.hovered = false);
+    });
+
+    document.fonts.ready.then(() => {
+      measureAndPlace();
+      if (reduceMotion) render(0);
+      else requestAnimationFrame(step);
+    });
+    window.addEventListener("resize", () => {
+      const b = bounds();
+      bubbles.forEach(bub => clamp(bub, b));
+      if (reduceMotion) render(0);
+    });
+  </script>
+</body>
+</html>

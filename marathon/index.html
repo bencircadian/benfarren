@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<meta name="theme-color" content="#0a0a0b"/>
+<title>Marathon Training — Ben Farren</title>
+<meta name="description" content="Training log for the Brighton Marathon 2027."/>
+<meta name="robots" content="noindex"/>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+<link rel="canonical" href="https://benfarren.co.uk/marathon"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          "noir": "#0a0a0b",
+          "noir-light": "#141416",
+          "noir-lighter": "#1c1c1f",
+          "chalk": "#f5f5f0",
+          "chalk-dim": "#a3a39e",
+          "amber": "#f59e0b",
+          "amber-dim": "#d97706",
+          "teal": "#14b8a6",
+          "violet": "#8b5cf6",
+        },
+        fontFamily: {
+          "display": ["Lora", "Georgia", "serif"],
+          "body": ["Outfit", "system-ui", "sans-serif"],
+          "mono": ["JetBrains Mono", "monospace"],
+        },
+      },
+    },
+  }
+</script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background:
+      linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px) 0 0 / 28px 28px,
+      linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px) 0 0 / 28px 28px,
+      #0a0a0b;
+    -webkit-tap-highlight-color: transparent;
+  }
+  ::selection { background: #f59e0b; color: #0a0a0b; }
+
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; font-size: 20px; line-height: 1; vertical-align: middle; }
+  .ms-fill { font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24; }
+
+  /* Race-bib countdown: amber band, pin holes in the corners */
+  .bib { position: relative; }
+  .bib::before, .bib::after, .bib > .pins::before, .bib > .pins::after {
+    content: ""; position: absolute; width: 7px; height: 7px; border-radius: 50%;
+    background: #0a0a0b; box-shadow: inset 0 0 0 1.5px rgba(245,245,240,0.18);
+  }
+  .bib::before { top: 10px; left: 10px; }
+  .bib::after { top: 10px; right: 10px; }
+  .bib > .pins::before { bottom: 10px; left: 10px; }
+  .bib > .pins::after { bottom: 10px; right: 10px; }
+
+  .check-btn { transition: transform .12s ease, background-color .15s ease, border-color .15s ease; }
+  .check-btn:active { transform: scale(0.9); }
+  @keyframes pop { 0% { transform: scale(0.6); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
+  .just-done { animation: pop .3s ease-out; }
+
+  .pill { transition: background-color .15s ease, border-color .15s ease, color .15s ease; }
+  .pill:active { transform: scale(0.97); }
+
+  @keyframes popIn { 0% { opacity: 0; transform: translateY(6px); } 100% { opacity: 1; transform: none; } }
+  .pop-in { animation: popIn .25s ease-out; }
+
+  .bar { transition: height .3s ease, y .3s ease; }
+  .tabbar { padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .just-done, .pop-in, .bar { animation: none; transition: none; }
+  }
+</style>
+</head>
+<body class="text-chalk font-body min-h-screen">
+
+  <header class="border-b border-chalk/10 bg-noir/80 backdrop-blur-xl sticky top-0 z-20">
+    <div class="max-w-xl mx-auto px-4 h-14 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-1.5 text-chalk-dim hover:text-chalk transition-colors text-sm">
+        <span class="material-symbols-outlined" style="font-size:18px">arrow_back</span>
+        <span>Ben Farren</span>
+      </a>
+      <div class="flex items-center gap-1.5 text-amber">
+        <span class="material-symbols-outlined">directions_run</span>
+        <span class="font-display font-semibold tracking-wide">Marathon</span>
+      </div>
+    </div>
+  </header>
+
+  <main id="app" class="max-w-xl mx-auto px-4 pt-5 pb-32">
+    <p class="text-chalk-dim text-sm font-mono py-20 text-center">Loading plan…</p>
+  </main>
+
+  <nav class="tabbar fixed bottom-0 inset-x-0 z-20 bg-noir/90 backdrop-blur-xl border-t border-chalk/10" aria-label="Views">
+    <div class="max-w-xl mx-auto grid grid-cols-3 pt-2.5" id="tabs"></div>
+  </nav>
+
+  <div id="tooltip" role="status" class="pointer-events-none fixed z-30 hidden rounded-md bg-noir-lighter border border-chalk/15 px-2.5 py-1.5 text-xs shadow-lg"></div>
+
+<script>
+"use strict";
+
+/* ============================== CONSTANTS ============================== */
+
+const PLAN_URL = '/marathon/plan.json';
+const API_URL = '/api/marathon-log';
+const LOG_KEY = 'marathonLog:v1';
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const BACKUP_DAY = 'Thu';
+const MOVABLE_DAYS = ['Tue', 'Fri'];
+const DEFAULT_CAP = { days: ['Tue', 'Fri'], fromWeek: 1, toWeek: 6, maxMinutes: 45 };
+
+// Text label always accompanies the colour, so identity is never colour-only.
+const TYPE_STYLE = {
+  easy:      'text-teal border-teal/40 bg-teal/10',
+  recovery:  'text-teal border-teal/40 bg-teal/10',
+  long:      'text-amber border-amber/40 bg-amber/10',
+  tempo:     'text-violet border-violet/40 bg-violet/10',
+  intervals: 'text-violet border-violet/40 bg-violet/10',
+  race:      'text-noir border-amber bg-amber',
+};
+const typeStyle = t => TYPE_STYLE[t] || 'text-chalk-dim border-chalk/20 bg-chalk/5';
+
+/* ============================== DATES ============================== */
+
+// All dates are local midnight; plan dates are plain YYYY-MM-DD strings.
+function parseDate(str) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(str || '').trim());
+  if (!m) return null;
+  const d = new Date(+m[1], +m[2] - 1, +m[3]);
+  return d.getMonth() === +m[2] - 1 ? d : null;
+}
+const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+const diffDays = (a, b) => Math.round((b - a) / 864e5);
+const mondayOf = d => addDays(d, -((d.getDay() + 6) % 7));
+const fmtShort = d => d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+const fmtDayMonth = d => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+const fmtLong = d => d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+function getToday() {
+  // ?today=YYYY-MM-DD lets you preview any point in the plan.
+  const override = parseDate(new URLSearchParams(location.search).get('today'));
+  const now = new Date();
+  return override || new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+function normDay(v) {
+  const key = String(v || '').trim().slice(0, 3).toLowerCase();
+  return DAYS.find(d => d.toLowerCase() === key) || null;
+}
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmtMins = m => m >= 90 ? `${Math.floor(m / 60)}h${m % 60 ? ' ' + String(m % 60).padStart(2, '0') : ''}` : `${m} min`;
+
+/* ============================== PLAN ============================== */
+
+function buildPlan(raw) {
+  const issues = [];   // { level: 'error' | 'warn', text, ids? }
+  const race = raw.race || {};
+  const raceDate = parseDate(race.date) || parseDate('2027-04-04');
+  if (!parseDate(race.date)) issues.push({ level: 'error', text: `race.date "${race.date}" isn't a valid YYYY-MM-DD date — using 4 April 2027.` });
+
+  let start = parseDate(raw.startDate);
+  if (!start) {
+    issues.push({ level: 'error', text: `startDate "${raw.startDate}" isn't a valid YYYY-MM-DD date. Showing dates from today instead.` });
+    start = getToday();
+  }
+  const week1 = mondayOf(start);
+  const raceWeek = Math.floor(diffDays(week1, raceDate) / 7) + 1;
+  if (raceWeek < 1) issues.push({ level: 'error', text: 'startDate is after race day.' });
+
+  const cap = { ...DEFAULT_CAP, ...((raw.rules || {}).weekdayCap || {}) };
+  cap.days = (cap.days || []).map(normDay).filter(Boolean);
+
+  const sessions = [];
+  const seen = new Map();
+  (Array.isArray(raw.sessions) ? raw.sessions : []).forEach((s, i) => {
+    const where = `Session #${i + 1}`;
+    const week = Number(s && s.week);
+    const day = normDay(s && s.day);
+    const minutes = Number(s && s.minutes);
+    if (!Number.isInteger(week) || week < 1) return issues.push({ level: 'error', text: `${where}: week "${s && s.week}" must be a whole number from 1. Skipped.` });
+    if (!day) return issues.push({ level: 'error', text: `${where} (week ${week}): day "${s.day}" isn't a weekday name. Skipped.` });
+    if (!Number.isFinite(minutes) || minutes < 0) return issues.push({ level: 'error', text: `${where} (week ${week} ${day}): minutes "${s.minutes}" must be a number. Skipped.` });
+
+    let id = `w${week}-${day}`;
+    const n = (seen.get(id) || 0) + 1;
+    seen.set(id, n);
+    if (n > 1) {
+      issues.push({ level: 'warn', text: `Week ${week} has ${n} sessions on ${day}.` });
+      id += `-${n}`;
+    }
+    const date = addDays(week1, (week - 1) * 7 + DAYS.indexOf(day));
+    const overCap = cap.days.includes(day) && week >= cap.fromWeek && week <= cap.toWeek && minutes > cap.maxMinutes;
+    sessions.push({
+      id, week, day, date, minutes: Math.round(minutes),
+      type: String(s.type || 'run').trim().toLowerCase(),
+      description: s.description ? String(s.description) : '',
+      overCap,
+    });
+  });
+
+  sessions.sort((a, b) => a.date - b.date);
+
+  const flagged = sessions.filter(s => s.overCap);
+  if (flagged.length) {
+    issues.unshift({
+      level: 'cap',
+      text: `${flagged.length} ${cap.days.join('/')} session${flagged.length > 1 ? 's' : ''} in weeks ${cap.fromWeek}–${cap.toWeek} ${flagged.length > 1 ? 'are' : 'is'} longer than ${cap.maxMinutes} minutes.`,
+      ids: flagged.map(s => s.id),
+    });
+  }
+  const lastWeek = sessions.reduce((m, s) => Math.max(m, s.week), 0);
+  if (!sessions.length) issues.push({ level: 'error', text: 'The plan has no valid sessions yet.' });
+  else if (lastWeek !== raceWeek) {
+    issues.push({ level: 'warn', text: `The plan runs to week ${lastWeek}, but race day is in week ${raceWeek} counting from startDate (${fmtShort(start)}). Check startDate.` });
+  }
+
+  return { race: { name: race.name || 'Marathon', goal: race.goal || '', date: raceDate }, start, week1, raceWeek, cap, sessions, issues, isSample: /SAMPLE PLAN/.test(raw._readme || '') };
+}
+
+const weekStart = w => addDays(plan.week1, (w - 1) * 7);
+const sessionsInWeek = w => plan.sessions.filter(s => s.week === w).sort((a, b) => effDate(a) - effDate(b));
+const totalWeeks = () => Math.max(plan.raceWeek, plan.sessions.reduce((m, s) => Math.max(m, s.week), 0), 1);
+
+function currentWeek() {
+  const w = Math.floor(diffDays(plan.week1, today) / 7) + 1;
+  return Math.min(Math.max(w, 1), totalWeeks());
+}
+
+/* ============================== LOG (DB-backed, localStorage cache) ============================== */
+
+// log[sessionId] = { status: 'done' | 'skipped' | null, thu: bool, note: string, updatedAt }
+function loadLog() {
+  try { return JSON.parse(localStorage.getItem(LOG_KEY)) || {}; }
+  catch { return {}; }
+}
+
+function mergeLog(a, b) {
+  const merged = { ...a };
+  for (const [id, e] of Object.entries(b || {})) {
+    if (!e || typeof e !== 'object') continue;
+    if (!merged[id] || (e.updatedAt || 0) >= (merged[id].updatedAt || 0)) merged[id] = e;
+  }
+  return merged;
+}
+
+let pushTimer = null;
+function persistLog() {
+  try { localStorage.setItem(LOG_KEY, JSON.stringify(log)); } catch {}
+  // Batch rapid taps into one request; the server merges per session.
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(() => { pushTimer = null; pushLog(); }, 400);
+}
+
+async function pushLog() {
+  try {
+    const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(log), keepalive: true });
+    setSync(res.ok ? 'synced' : 'local');
+  } catch { setSync('local'); }
+}
+
+async function syncFromServer() {
+  try {
+    const res = await fetch(API_URL, { cache: 'no-store' });
+    if (!res.ok) return setSync('local');
+    const remote = await res.json();
+    if (!remote || typeof remote !== 'object' || remote.error) return setSync('local');
+    const merged = mergeLog(log, remote);
+    const changed = JSON.stringify(merged) !== JSON.stringify(log);
+    log = merged;
+    try { localStorage.setItem(LOG_KEY, JSON.stringify(log)); } catch {}
+    setSync('synced');
+    if (changed && !document.activeElement?.matches('textarea')) render();
+  } catch { setSync('local'); }
+}
+
+let syncState = 'pending';
+function setSync(s) {
+  syncState = s;
+  const el = document.getElementById('sync');
+  if (el) el.innerHTML = syncLabel();
+}
+const syncLabel = () => syncState === 'synced'
+  ? '<span class="material-symbols-outlined" style="font-size:14px">cloud_done</span> Synced'
+  : syncState === 'local'
+    ? '<span class="material-symbols-outlined" style="font-size:14px">cloud_off</span> Saved on this device'
+    : '<span class="material-symbols-outlined" style="font-size:14px">cloud_sync</span> Syncing…';
+
+function entry(id) { return log[id] || {}; }
+function setEntry(id, patch, { rerender = true } = {}) {
+  log[id] = { ...entry(id), ...patch, updatedAt: Date.now() };
+  persistLog();
+  if (rerender) render();
+}
+
+function effDate(s) {
+  return entry(s.id).thu ? addDays(weekStart(s.week), DAYS.indexOf(BACKUP_DAY)) : s.date;
+}
+
+// done | skipped | moved (to Thu, not yet run) | missed (past, unlogged) | today | upcoming
+function statusOf(s) {
+  const e = entry(s.id);
+  if (e.status === 'done') return 'done';
+  if (e.status === 'skipped') return 'skipped';
+  const d = diffDays(today, effDate(s));
+  if (d < 0) return 'missed';
+  if (e.thu) return 'moved';
+  return d === 0 ? 'today' : 'upcoming';
+}
+
+function nextSession() {
+  return plan.sessions
+    .filter(s => !['done', 'skipped'].includes(entry(s.id).status) && effDate(s) >= today)
+    .sort((a, b) => effDate(a) - effDate(b))[0] || null;
+}
+
+/* ============================== STATE ============================== */
+
+let plan, log = loadLog(), today = getToday();
+const state = { tab: 'week', week: 1, openNotes: new Set(), justDone: null, issuesOpen: false };
+const root = document.getElementById('app');
+const TABS = [
+  { id: 'week', label: 'This week', icon: 'directions_run' },
+  { id: 'progress', label: 'Progress', icon: 'bar_chart' },
+  { id: 'plan', label: 'Plan', icon: 'event_note' },
+];
+
+/* ============================== RENDER ============================== */
+
+function render() {
+  document.getElementById('tabs').innerHTML = TABS.map(t => `
+    <button data-action="tab" data-tab="${t.id}" class="flex flex-col items-center gap-0.5 py-1 ${state.tab === t.id ? 'text-amber' : 'text-chalk-dim hover:text-chalk'}" aria-current="${state.tab === t.id ? 'page' : 'false'}">
+      <span class="material-symbols-outlined ${state.tab === t.id ? 'ms-fill' : ''}" style="font-size:22px">${t.icon}</span>
+      <span class="font-mono text-[10px] uppercase tracking-widest">${t.label}</span>
+    </button>`).join('');
+
+  const view = state.tab === 'progress' ? renderProgress() : state.tab === 'plan' ? renderPlan() : renderWeek();
+  root.innerHTML = view + `
+    <p id="sync" class="mt-10 flex items-center justify-center gap-1 text-[11px] font-mono text-chalk-dim/60">${syncLabel()}</p>`;
+}
+
+function renderIssues({ compact }) {
+  const list = plan.issues;
+  if (!list.length) return '';
+  const capIssue = list.find(i => i.level === 'cap');
+  const others = list.filter(i => i.level !== 'cap');
+  const hasError = others.some(i => i.level === 'error');
+  const headline = capIssue ? capIssue.text : `${others.length} problem${others.length > 1 ? 's' : ''} in plan.json`;
+  const tone = capIssue || hasError ? 'border-amber/50 bg-amber/10' : 'border-chalk/15 bg-noir-light';
+  const open = !compact || state.issuesOpen;
+  return `
+  <section class="mb-5 rounded-xl border ${tone}" role="alert">
+    <button data-action="toggle-issues" class="w-full flex items-start gap-2.5 p-3.5 text-left" ${compact ? '' : 'disabled'}>
+      <span class="material-symbols-outlined ms-fill text-amber mt-0.5">warning</span>
+      <span class="flex-1">
+        <span class="block font-semibold text-sm leading-snug">${esc(headline)}</span>
+        ${capIssue ? `<span class="block text-xs text-chalk-dim mt-0.5">Rule: ${esc(plan.cap.days.join(' & '))} runs in weeks ${plan.cap.fromWeek}–${plan.cap.toWeek} max ${plan.cap.maxMinutes} min. Flagged sessions are marked below.</span>` : ''}
+      </span>
+      ${compact ? `<span class="material-symbols-outlined text-chalk-dim">${open ? 'expand_less' : 'expand_more'}</span>` : ''}
+    </button>
+    ${open ? `
+    <ul class="px-3.5 pb-3.5 -mt-1 space-y-1.5 text-xs">
+      ${capIssue ? plan.sessions.filter(s => s.overCap).map(s => `
+        <li><button data-action="goto-week" data-week="${s.week}" class="flex items-center gap-2 text-left hover:text-amber">
+          <span class="font-mono text-amber">W${s.week} ${s.day}</span>
+          <span>${esc(cap1(s.type))} · <strong>${s.minutes} min</strong> <span class="text-chalk-dim">(${s.minutes - plan.cap.maxMinutes} over)</span></span>
+        </button></li>`).join('') : ''}
+      ${others.map(i => `<li class="flex gap-2 ${i.level === 'error' ? 'text-amber' : 'text-chalk-dim'}"><span class="font-mono">${i.level === 'error' ? 'ERR' : 'NOTE'}</span><span class="text-chalk">${esc(i.text)}</span></li>`).join('')}
+    </ul>` : ''}
+  </section>`;
+}
+
+const cap1 = s => s.charAt(0).toUpperCase() + s.slice(1);
+
+function renderBib() {
+  const days = diffDays(today, plan.race.date);
+  const cw = currentWeek();
+  const tw = totalWeeks();
+  const startsIn = diffDays(today, plan.start);
+  const big = days > 0 ? days : days === 0 ? '0' : '✓';
+  const caption = days > 1 ? 'days to go' : days === 1 ? 'day to go' : days === 0 ? 'Race day — go get it' : 'Race complete';
+  const pct = Math.min(100, Math.max(0, (diffDays(plan.week1, today) + 1) / (tw * 7) * 100));
+  return `
+  <section class="bib rounded-2xl bg-chalk text-noir overflow-hidden mb-5 shadow-[0_12px_40px_rgba(0,0,0,0.45)]">
+    <span class="pins"></span>
+    <div class="bg-amber px-6 py-2 flex items-center justify-between font-mono text-[11px] uppercase tracking-[0.18em] font-semibold">
+      <span>${esc(plan.race.name)}</span>
+      <span>${plan.race.date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' }).replace(/\//g, '.')}</span>
+    </div>
+    <div class="px-6 pt-3 pb-4 flex items-end justify-between gap-4">
+      <div>
+        <div class="font-mono font-semibold leading-none tracking-tight text-[64px] sm:text-[76px]">${big}</div>
+        <div class="font-display italic text-[17px] mt-1">${caption}</div>
+      </div>
+      <div class="text-right pb-1">
+        ${plan.race.goal ? `<div class="font-mono text-[10px] uppercase tracking-widest text-noir/60">Goal</div><div class="font-display font-semibold text-xl leading-tight">${esc(plan.race.goal)}</div>` : ''}
+        <div class="font-mono text-[10px] uppercase tracking-widest text-noir/60 mt-2">${startsIn > 0 ? `Starts in ${startsIn}d` : `Week ${cw} of ${tw}`}</div>
+      </div>
+    </div>
+    <div class="h-1.5 bg-noir/10"><div class="h-full bg-noir" style="width:${pct}%"></div></div>
+  </section>`;
+}
+
+function renderWeek() {
+  const w = state.week;
+  const cw = currentWeek();
+  const tw = totalWeeks();
+  const list = sessionsInWeek(w);
+  const next = nextSession();
+  const done = list.filter(s => entry(s.id).status === 'done');
+  const movedCount = list.filter(s => entry(s.id).thu).length;
+  const startsIn = diffDays(today, plan.start);
+
+  return `
+  ${renderBib()}
+  ${renderIssues({ compact: true })}
+  ${plan.isSample ? `<p class="mb-5 text-xs text-chalk-dim flex gap-2 items-start"><span class="material-symbols-outlined text-violet" style="font-size:16px">info</span><span>Showing the <strong class="text-chalk">sample plan</strong>. Paste yours into <code class="font-mono text-chalk">marathon/plan.json</code>.</span></p>` : ''}
+
+  ${next ? `
+  <button data-action="scroll-next" data-week="${next.week}" data-id="${next.id}" class="w-full mb-5 flex items-center gap-3 rounded-xl border border-chalk/10 bg-noir-light px-4 py-3 text-left hover:border-chalk/25">
+    <span class="font-mono text-[10px] uppercase tracking-widest text-amber">Up next</span>
+    <span class="flex-1 text-sm truncate"><strong>${relDay(effDate(next))}</strong> · ${esc(cap1(next.type))} ${fmtMins(next.minutes)}</span>
+    <span class="material-symbols-outlined text-chalk-dim">arrow_forward</span>
+  </button>` : ''}
+
+  <div class="flex items-center justify-between mb-3">
+    <button data-action="week" data-week="${w - 1}" class="p-2 -ml-2 text-chalk-dim hover:text-chalk disabled:opacity-20" ${w <= 1 ? 'disabled' : ''} aria-label="Previous week">
+      <span class="material-symbols-outlined">chevron_left</span>
+    </button>
+    <div class="text-center">
+      <div class="font-display text-xl font-semibold">${w === cw && startsIn <= 0 ? 'This week' : `Week ${w}`}</div>
+      <div class="font-mono text-[11px] text-chalk-dim tracking-wide">W${w}/${tw} · ${fmtDayMonth(weekStart(w))} – ${fmtDayMonth(addDays(weekStart(w), 6))}
+        ${w !== cw ? ` · <button data-action="week" data-week="${cw}" class="text-amber underline underline-offset-2">today</button>` : ''}</div>
+    </div>
+    <button data-action="week" data-week="${w + 1}" class="p-2 -mr-2 text-chalk-dim hover:text-chalk disabled:opacity-20" ${w >= tw ? 'disabled' : ''} aria-label="Next week">
+      <span class="material-symbols-outlined">chevron_right</span>
+    </button>
+  </div>
+
+  <div class="space-y-3">
+    ${list.length ? list.map(s => renderCard(s, { isNext: next && next.id === s.id, thuTaken: movedCount > 0 && !entry(s.id).thu })).join('')
+      : `<p class="rounded-xl border border-dashed border-chalk/15 p-6 text-center text-sm text-chalk-dim">No sessions planned this week.</p>`}
+  </div>
+
+  ${list.length ? `
+  <p class="mt-4 text-center font-mono text-xs text-chalk-dim">
+    ${done.length}/${list.length} done · ${fmtMins(done.reduce((t, s) => t + s.minutes, 0))} of ${fmtMins(list.reduce((t, s) => t + s.minutes, 0))}
+  </p>` : ''}`;
+}
+
+function relDay(d) {
+  const n = diffDays(today, d);
+  return n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : fmtShort(d);
+}
+
+const STATUS_META = {
+  done:     { label: 'Done',         icon: 'check_circle', cls: 'text-teal' },
+  skipped:  { label: 'Skipped',      icon: 'block',        cls: 'text-chalk-dim' },
+  moved:    { label: 'Moved to Thu', icon: 'event_repeat', cls: 'text-violet' },
+  missed:   { label: 'Not logged',   icon: 'help',         cls: 'text-amber' },
+  today:    { label: 'Today',        icon: 'today',        cls: 'text-amber' },
+  upcoming: { label: 'Upcoming',     icon: 'schedule',     cls: 'text-chalk-dim' },
+};
+
+function renderCard(s, { isNext, thuTaken }) {
+  const e = entry(s.id);
+  const st = statusOf(s);
+  const meta = STATUS_META[st];
+  const d = effDate(s);
+  const isDone = st === 'done';
+  const isSkipped = st === 'skipped';
+  const canMove = MOVABLE_DAYS.includes(s.day) && !isDone && !isSkipped;
+  const noteOpen = state.openNotes.has(s.id);
+  const border = isNext ? 'border-amber/60' : st === 'today' ? 'border-amber/40' : isDone ? 'border-teal/30' : 'border-chalk/10';
+
+  return `
+  <article id="card-${s.id}" class="rounded-2xl border ${border} bg-noir-light ${isSkipped ? 'opacity-60' : ''}">
+    <div class="flex items-stretch gap-3 p-3.5 pb-3">
+      <div class="w-12 shrink-0 text-center pt-0.5">
+        <div class="font-display text-lg font-semibold leading-none ${e.thu ? 'text-violet' : ''}">${DAYS[(d.getDay() + 6) % 7]}</div>
+        <div class="font-mono text-[11px] text-chalk-dim mt-1">${d.getDate()} ${d.toLocaleDateString('en-GB', { month: 'short' })}</div>
+        ${e.thu ? `<div class="font-mono text-[9px] text-chalk-dim/70 mt-0.5 line-through">${s.day}</div>` : ''}
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <span class="inline-flex items-center rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider ${typeStyle(s.type)}">${esc(s.type)}</span>
+          ${isNext ? '<span class="font-mono text-[10px] uppercase tracking-widest text-amber">· Next</span>' : ''}
+        </div>
+        <div class="mt-1.5 font-mono text-2xl font-semibold leading-none ${isSkipped ? 'line-through' : ''}">${fmtMins(s.minutes)}</div>
+        ${s.description ? `<p class="mt-1.5 text-[13px] leading-snug text-chalk-dim">${esc(s.description)}</p>` : ''}
+      </div>
+      <button data-action="done" data-id="${s.id}"
+        class="check-btn self-center shrink-0 w-14 h-14 rounded-full border-2 flex items-center justify-center ${isDone ? 'bg-teal border-teal text-noir' : 'border-chalk/25 text-chalk-dim hover:border-teal hover:text-teal'} ${state.justDone === s.id ? 'just-done' : ''}"
+        aria-pressed="${isDone}" aria-label="${isDone ? 'Undo done' : 'Mark done'}: ${s.day} ${esc(s.type)} ${s.minutes} minutes">
+        <span class="material-symbols-outlined ${isDone ? 'ms-fill' : ''}" style="font-size:30px">check</span>
+      </button>
+    </div>
+
+    ${s.overCap ? `
+    <div class="mx-3.5 mb-2.5 flex items-center gap-1.5 rounded-lg bg-amber/10 border border-amber/40 px-2.5 py-1.5 text-xs text-amber">
+      <span class="material-symbols-outlined ms-fill" style="font-size:16px">warning</span>
+      <span><strong>${s.minutes - plan.cap.maxMinutes} min over</strong> the ${plan.cap.maxMinutes}-min cap for weeks ${plan.cap.fromWeek}–${plan.cap.toWeek}</span>
+    </div>` : ''}
+
+    <div class="flex items-center gap-2 px-3.5 pb-3 flex-wrap">
+      <span class="inline-flex items-center gap-1 text-xs ${meta.cls} mr-auto">
+        <span class="material-symbols-outlined ${st === 'done' ? 'ms-fill' : ''}" style="font-size:16px">${meta.icon}</span>${meta.label}${isDone && e.thu ? ' (Thu)' : ''}
+      </span>
+      <button data-action="skip" data-id="${s.id}" class="pill rounded-full border px-3 py-1.5 text-xs ${isSkipped ? 'border-chalk/40 bg-chalk/10 text-chalk' : 'border-chalk/15 text-chalk-dim hover:text-chalk'}" aria-pressed="${isSkipped}">
+        ${isSkipped ? 'Unskip' : 'Skip'}
+      </button>
+      ${MOVABLE_DAYS.includes(s.day) ? `
+      <button data-action="thu" data-id="${s.id}" class="pill rounded-full border px-3 py-1.5 text-xs ${e.thu ? 'border-violet/60 bg-violet/15 text-violet' : 'border-chalk/15 text-chalk-dim hover:text-chalk'} disabled:opacity-30"
+        aria-pressed="${!!e.thu}" ${(!canMove && !e.thu) || (thuTaken && !e.thu) || (isDone && e.thu) ? 'disabled' : ''} title="${thuTaken && !e.thu ? 'Thursday is already used this week' : ''}">
+        ${e.thu ? `Back to ${s.day}` : '→ Thu'}
+      </button>` : ''}
+      <button data-action="note" data-id="${s.id}" class="pill rounded-full border px-2.5 py-1.5 text-xs ${e.note || noteOpen ? 'border-chalk/30 text-chalk' : 'border-chalk/15 text-chalk-dim hover:text-chalk'}" aria-expanded="${noteOpen}" aria-label="Note">
+        <span class="material-symbols-outlined" style="font-size:15px">edit_note</span>
+      </button>
+    </div>
+
+    ${noteOpen ? `
+    <div class="px-3.5 pb-3.5">
+      <textarea data-note="${s.id}" rows="2" maxlength="500" placeholder="How did it feel? Route, pace, niggles…"
+        class="w-full rounded-lg bg-noir border border-chalk/15 focus:border-amber focus:outline-none px-3 py-2 text-sm text-chalk placeholder:text-chalk-dim/50 resize-none">${esc(e.note || '')}</textarea>
+    </div>` : e.note ? `
+    <button data-action="note" data-id="${s.id}" class="block w-full text-left px-3.5 pb-3.5 -mt-1">
+      <p class="border-l-2 border-chalk/20 pl-2.5 font-display italic text-sm text-chalk/90 whitespace-pre-wrap">${esc(e.note)}</p>
+    </button>` : ''}
+  </article>`;
+}
+
+/* ---------- Progress ---------- */
+
+function weekStats(w) {
+  const list = sessionsInWeek(w);
+  const counts = { planned: list.length, done: 0, skipped: 0, due: 0, minutes: 0 };
+  for (const s of list) {
+    const st = statusOf(s);
+    if (st === 'done') { counts.done++; counts.minutes += s.minutes; }
+    if (st === 'skipped') counts.skipped++;
+    if (st === 'done' || st === 'skipped' || st === 'missed') counts.due++;
+  }
+  return counts;
+}
+
+function renderProgress() {
+  const tw = totalWeeks();
+  const cw = currentWeek();
+  const weeks = Array.from({ length: tw }, (_, i) => ({ w: i + 1, ...weekStats(i + 1) }));
+  const tot = weeks.reduce((a, x) => ({ planned: a.planned + x.planned, done: a.done + x.done, due: a.due + x.due, minutes: a.minutes + x.minutes }), { planned: 0, done: 0, due: 0, minutes: 0 });
+  const consistency = tot.due ? Math.round(tot.done / tot.due * 100) : null;
+  const pastWeeks = weeks.filter(x => x.w < cw && x.planned);
+  const fullWeeks = pastWeeks.filter(x => x.done === x.planned).length;
+  let streak = 0;
+  for (let i = pastWeeks.length - 1; i >= 0 && pastWeeks[i].done === pastWeeks[i].planned; i--) streak++;
+
+  const tile = (label, value, sub) => `
+    <div class="rounded-xl border border-chalk/10 bg-noir-light p-3.5">
+      <div class="font-mono text-[10px] uppercase tracking-widest text-chalk-dim">${label}</div>
+      <div class="font-mono text-3xl font-semibold mt-1 leading-none">${value}</div>
+      <div class="text-xs text-chalk-dim mt-1.5">${sub}</div>
+    </div>`;
+
+  return `
+  <h1 class="font-display text-2xl font-semibold mb-1">Progress</h1>
+  <p class="text-sm text-chalk-dim mb-5">Week ${cw} of ${tw}. Consistency beats heroics.</p>
+
+  <div class="grid grid-cols-2 gap-3 mb-6">
+    ${tile('Sessions done', `${tot.done}<span class="text-chalk-dim text-lg">/${tot.planned}</span>`, `${tot.planned ? Math.round(tot.done / tot.planned * 100) : 0}% of the whole plan`)}
+    ${tile('Consistency', consistency === null ? '—' : `${consistency}%`, tot.due ? `${tot.done} of ${tot.due} sessions due so far` : 'Nothing due yet')}
+    ${tile('Time on feet', fmtMins(tot.minutes).replace(' min', '<span class="text-chalk-dim text-lg">m</span>'), 'from completed sessions')}
+    ${tile('Full weeks', `${fullWeeks}<span class="text-chalk-dim text-lg">/${pastWeeks.length}</span>`, streak ? `${streak}-week streak going` : 'every session ticked off')}
+  </div>
+
+  <section class="rounded-xl border border-chalk/10 bg-noir-light p-4 mb-6">
+    <h2 class="text-sm font-semibold">Sessions completed per week</h2>
+    <p class="text-xs text-chalk-dim mb-3">Solid bar = done, outline = planned. Tap a bar for detail.</p>
+    ${renderChart(weeks, cw)}
+  </section>
+
+  <section>
+    <h2 class="text-sm font-semibold mb-2">Week by week</h2>
+    <div class="rounded-xl border border-chalk/10 divide-y divide-chalk/10 overflow-hidden">
+      ${weeks.map(x => renderWeekRow(x, cw)).join('')}
+    </div>
+    <p class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-chalk-dim">
+      ${['done', 'skipped', 'moved', 'missed', 'upcoming'].map(k => `<span class="inline-flex items-center gap-1"><span class="material-symbols-outlined ${STATUS_META[k].cls} ${k === 'done' ? 'ms-fill' : ''}" style="font-size:14px">${STATUS_META[k].icon}</span>${STATUS_META[k].label}</span>`).join('')}
+    </p>
+  </section>`;
+}
+
+function renderChart(weeks, cw) {
+  const W = 340, H = 132, padL = 18, padB = 20, padT = 6;
+  const maxY = Math.max(3, ...weeks.map(x => x.planned));
+  const slot = (W - padL) / weeks.length;
+  const bw = Math.max(4, Math.min(18, slot - 2));   // 2px gap between bars
+  const y = v => padT + (H - padT - padB) * (1 - v / maxY);
+  const grid = Array.from({ length: maxY + 1 }, (_, v) => `
+    <line x1="${padL}" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="rgba(245,245,240,${v === 0 ? 0.25 : 0.07})" stroke-width="1"/>
+    <text x="${padL - 6}" y="${y(v) + 3}" text-anchor="end" font-size="9" fill="#a3a39e" font-family="JetBrains Mono">${v}</text>`).join('');
+
+  // Rounded top, square base: path with 4px radius on the data end only.
+  const barPath = (x, top, bottom, r) => {
+    const h = bottom - top; if (h <= 0) return '';
+    r = Math.min(r, h, bw / 2);
+    return `M${x},${bottom} V${top + r} Q${x},${top} ${x + r},${top} H${x + bw - r} Q${x + bw},${top} ${x + bw},${top + r} V${bottom} Z`;
+  };
+
+  const bars = weeks.map((x, i) => {
+    const bx = padL + i * slot + (slot - bw) / 2;
+    const isCur = x.w === cw;
+    const label = `Week ${x.w}: ${x.done}/${x.planned} done${x.skipped ? `, ${x.skipped} skipped` : ''}`;
+    return `
+      <g data-tip="${esc(label)}" data-action="goto-week" data-week="${x.w}" class="cursor-pointer">
+        <rect x="${padL + i * slot}" y="${padT}" width="${slot}" height="${H - padT - padB}" fill="transparent"/>
+        ${x.planned ? `<path d="${barPath(bx + 0.5, y(x.planned) + 0.5, y(0), 4)}" fill="none" stroke="rgba(245,245,240,0.18)" stroke-width="1"/>` : ''}
+        ${x.done ? `<path class="bar" d="${barPath(bx, y(x.done), y(0), 4)}" fill="#14b8a6"/>` : ''}
+        ${x.w === 1 || x.w % 4 === 0 || x.w === weeks.length || isCur ? `<text x="${bx + bw / 2}" y="${H - 5}" text-anchor="middle" font-size="9" fill="${isCur ? '#f59e0b' : '#a3a39e'}" font-weight="${isCur ? 600 : 400}" font-family="JetBrains Mono">${x.w}</text>` : ''}
+      </g>`;
+  }).join('');
+
+  return `<svg viewBox="0 0 ${W} ${H}" class="w-full h-auto select-none" role="img" aria-label="Bar chart of sessions completed per week; the week-by-week list below has the same data.">
+    ${grid}${bars}
+  </svg>
+  <p class="mt-1 text-[10px] font-mono text-chalk-dim">Week number along the bottom · <span class="text-amber">amber = this week</span></p>`;
+}
+
+function renderWeekRow(x, cw) {
+  const list = sessionsInWeek(x.w);
+  const isCur = x.w === cw;
+  return `
+  <button data-action="goto-week" data-week="${x.w}" class="w-full flex items-center gap-3 px-3.5 py-2.5 text-left hover:bg-chalk/5 ${isCur ? 'bg-amber/5' : 'bg-noir-light'}">
+    <span class="w-9 font-mono text-xs ${isCur ? 'text-amber' : 'text-chalk-dim'}">W${x.w}</span>
+    <span class="w-14 font-mono text-[11px] text-chalk-dim">${fmtDayMonth(weekStart(x.w))}</span>
+    <span class="flex-1 flex items-center gap-1">
+      ${list.map(s => { const st = statusOf(s); const m = STATUS_META[st === 'today' ? 'upcoming' : st]; return `<span class="material-symbols-outlined ${m.cls} ${st === 'done' ? 'ms-fill' : ''}" style="font-size:18px" title="${s.day} ${esc(s.type)}: ${m.label}" aria-label="${s.day} ${esc(s.type)}: ${m.label}">${m.icon}</span>`; }).join('')}
+      ${list.some(s => s.overCap) ? '<span class="material-symbols-outlined ms-fill text-amber ml-1" style="font-size:14px" title="Has a session over the weekday cap">warning</span>' : ''}
+    </span>
+    <span class="font-mono text-xs ${x.planned && x.done === x.planned ? 'text-teal' : 'text-chalk-dim'}">${x.done}/${x.planned}</span>
+  </button>`;
+}
+
+/* ---------- Plan ---------- */
+
+function renderPlan() {
+  const tw = totalWeeks();
+  const cw = currentWeek();
+  return `
+  <h1 class="font-display text-2xl font-semibold mb-1">The plan</h1>
+  <p class="text-sm text-chalk-dim mb-4">${plan.sessions.length} sessions over ${tw} weeks, from <strong class="text-chalk">${fmtLong(plan.start)}</strong> to <strong class="text-chalk">${fmtLong(plan.race.date)}</strong>.</p>
+  <div class="mb-5 rounded-xl border border-chalk/10 bg-noir-light p-3.5 text-xs text-chalk-dim space-y-1.5">
+    <p class="flex gap-2"><span class="material-symbols-outlined text-chalk-dim" style="font-size:16px">rule</span><span>${esc(plan.cap.days.join(' & '))} sessions in weeks ${plan.cap.fromWeek}–${plan.cap.toWeek}: max <strong class="text-chalk">${plan.cap.maxMinutes} min</strong>.</span></p>
+    <p class="flex gap-2"><span class="material-symbols-outlined text-chalk-dim" style="font-size:16px">event_repeat</span><span>Thursday is the backup day for a missed Tuesday or Friday (one per week).</span></p>
+    <p class="flex gap-2"><span class="material-symbols-outlined text-chalk-dim" style="font-size:16px">edit_document</span><span>Edit <code class="font-mono text-chalk">marathon/plan.json</code> to change sessions or <code class="font-mono text-chalk">startDate</code>.</span></p>
+  </div>
+  ${renderIssues({ compact: false })}
+  <div class="space-y-4">
+    ${Array.from({ length: tw }, (_, i) => i + 1).map(w => {
+      const list = plan.sessions.filter(s => s.week === w);
+      return `
+      <section>
+        <button data-action="goto-week" data-week="${w}" class="w-full flex items-baseline justify-between mb-1.5 text-left">
+          <span class="font-display font-semibold ${w === cw ? 'text-amber' : ''}">Week ${w}${w === cw ? ' · now' : ''}${w === plan.raceWeek ? ' · race week' : ''}</span>
+          <span class="font-mono text-[11px] text-chalk-dim">${fmtDayMonth(weekStart(w))} · ${fmtMins(list.reduce((t, s) => t + s.minutes, 0))}</span>
+        </button>
+        <div class="rounded-xl border border-chalk/10 bg-noir-light divide-y divide-chalk/5">
+          ${list.length ? list.map(s => `
+          <div class="flex items-center gap-3 px-3.5 py-2 ${s.overCap ? 'bg-amber/10' : ''}">
+            <span class="w-8 font-mono text-xs text-chalk-dim">${s.day}</span>
+            <span class="inline-flex rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider ${typeStyle(s.type)}">${esc(s.type)}</span>
+            <span class="flex-1"></span>
+            ${s.overCap ? `<span class="inline-flex items-center gap-0.5 text-[11px] text-amber"><span class="material-symbols-outlined ms-fill" style="font-size:14px">warning</span>over cap</span>` : ''}
+            <span class="font-mono text-sm ${s.overCap ? 'text-amber font-semibold' : ''}">${fmtMins(s.minutes)}</span>
+          </div>`).join('') : '<p class="px-3.5 py-2 text-xs text-chalk-dim">Rest week</p>'}
+        </div>
+      </section>`;
+    }).join('')}
+  </div>`;
+}
+
+/* ============================== EVENTS ============================== */
+
+function setTab(tab) {
+  state.tab = tab;
+  history.replaceState(null, '', tab === 'week' ? location.pathname + location.search : `#${tab}`);
+  render();
+  window.scrollTo({ top: 0 });
+}
+
+document.addEventListener('click', ev => {
+  const el = ev.target.closest('[data-action]');
+  if (!el) return;
+  const { action, id } = el.dataset;
+  const week = Number(el.dataset.week);
+
+  if (action === 'tab') return setTab(el.dataset.tab);
+  if (action === 'week') { state.week = week; return render(); }
+  if (action === 'goto-week') { state.week = week; return setTab('week'); }
+  if (action === 'toggle-issues') { state.issuesOpen = !state.issuesOpen; return render(); }
+  if (action === 'scroll-next') {
+    state.week = week; render();
+    document.getElementById(`card-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  if (action === 'done') {
+    const isDone = entry(id).status === 'done';
+    if (!isDone && navigator.vibrate) navigator.vibrate(12);
+    state.justDone = isDone ? null : id;
+    return setEntry(id, { status: isDone ? null : 'done' });
+  }
+  if (action === 'skip') {
+    const isSkipped = entry(id).status === 'skipped';
+    return setEntry(id, isSkipped ? { status: null } : { status: 'skipped', thu: false });
+  }
+  if (action === 'thu') return setEntry(id, { thu: !entry(id).thu });
+  if (action === 'note') {
+    const opening = !state.openNotes.has(id);
+    opening ? state.openNotes.add(id) : state.openNotes.delete(id);
+    render();
+    if (opening) {
+      const ta = root.querySelector(`[data-note="${id}"]`);
+      if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+    }
+  }
+});
+
+// Notes save as you type, without re-rendering (which would steal focus).
+root.addEventListener('input', ev => {
+  const id = ev.target.dataset && ev.target.dataset.note;
+  if (id) setEntry(id, { note: ev.target.value.trim() ? ev.target.value : '' }, { rerender: false });
+});
+
+// Chart tooltip (hover on desktop, tap-and-hold on touch).
+const tip = document.getElementById('tooltip');
+root.addEventListener('pointerover', ev => {
+  const g = ev.target.closest('[data-tip]');
+  if (!g) return;
+  tip.textContent = g.dataset.tip;
+  tip.classList.remove('hidden');
+});
+root.addEventListener('pointermove', ev => {
+  if (tip.classList.contains('hidden')) return;
+  const x = Math.min(ev.clientX + 12, window.innerWidth - tip.offsetWidth - 8);
+  tip.style.left = `${Math.max(8, x)}px`;
+  tip.style.top = `${ev.clientY - tip.offsetHeight - 12}px`;
+});
+root.addEventListener('pointerout', ev => {
+  if (ev.target.closest('[data-tip]') && !ev.relatedTarget?.closest?.('[data-tip]')) tip.classList.add('hidden');
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    // Flush a pending sync before the phone suspends the tab.
+    if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; pushLog(); }
+    return;
+  }
+  const t = getToday();
+  if (+t !== +today) { today = t; state.week = currentWeek(); render(); }
+  syncFromServer();
+});
+
+/* ============================== INIT ============================== */
+
+async function init() {
+  try {
+    const res = await fetch(PLAN_URL, { cache: 'no-cache' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    let raw;
+    try { raw = JSON.parse(text); }
+    catch (err) { throw new Error(`plan.json isn't valid JSON — ${err.message}. A missing comma or a trailing comma is the usual culprit.`); }
+    plan = buildPlan(raw);
+  } catch (err) {
+    root.innerHTML = `
+      <div class="rounded-xl border border-amber/50 bg-amber/10 p-4 text-sm">
+        <p class="font-semibold flex items-center gap-2"><span class="material-symbols-outlined ms-fill text-amber">error</span>Couldn't load the training plan</p>
+        <p class="mt-2 text-chalk-dim">${esc(err.message)}</p>
+      </div>`;
+    return;
+  }
+  state.week = currentWeek();
+  const hash = location.hash.slice(1);
+  if (TABS.some(t => t.id === hash)) state.tab = hash;
+  render();
+  syncFromServer();
+}
+
+init();
+</script>
+</body>
+</html>
